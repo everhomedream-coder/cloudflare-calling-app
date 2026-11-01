@@ -46,7 +46,23 @@ export async function onRequestGet(context) {
             AND c.display_status = 'called'
             AND (c.outcome LIKE '%Interested%' OR c.outcome LIKE '%Renewed%')
             AND date(c.called_at) = date('now')
-        ) AS interested_today
+        ) AS interested_today,
+        (
+          SELECT COALESCE(ROUND(AVG(c.call_duration)), 0)
+          FROM contacts c 
+          WHERE LOWER(c.assigned_to) = LOWER(u.username) 
+            AND c.display_status = 'called'
+            AND date(c.called_at) = date('now')
+        ) AS avg_duration_today,
+        (
+          SELECT COUNT(*) 
+          FROM contacts c 
+          WHERE LOWER(c.assigned_to) = LOWER(u.username) 
+            AND c.display_status = 'called'
+            AND c.call_duration < 15
+            AND (c.outcome LIKE '%Interested%' OR c.outcome LIKE '%Refused%' OR c.outcome LIKE '%Renewed%')
+            AND date(c.called_at) = date('now')
+        ) AS suspicious_calls_today
       FROM users u 
       ORDER BY u.role DESC, u.id ASC
     `).all();
@@ -54,9 +70,14 @@ export async function onRequestGet(context) {
     const formattedUsers = (results || []).map(u => {
       const calls = u.calls_today || 0;
       const interested = u.interested_today || 0;
+      const avgSec = u.avg_duration_today || 0;
+      const m = Math.floor(avgSec / 60);
+      const s = avgSec % 60;
       return {
         ...u,
-        conversion_rate_today: calls > 0 ? Math.round((interested / calls) * 100) : 0
+        conversion_rate_today: calls > 0 ? Math.round((interested / calls) * 100) : 0,
+        formatted_avg_duration: `${m}m ${s < 10 ? '0' : ''}${s}s`,
+        has_fraud_flag: u.suspicious_calls_today > 0 && (u.suspicious_calls_today / (calls || 1)) >= 0.25
       };
     });
 

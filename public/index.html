@@ -270,6 +270,23 @@
             </button>
           </div>
 
+          <!-- Verified Talk Time Badge -->
+          <div class="mb-3 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 flex items-center justify-between text-xs">
+            <span class="text-slate-500 font-medium flex items-center space-x-1.5">
+              <i class="fa-solid fa-stopwatch text-blue-600"></i>
+              <span>Measured Talk Time:</span>
+            </span>
+            <span id="modalDurationText" class="font-mono font-black text-slate-800 bg-white border border-slate-200 px-2 py-0.5 rounded-md">--:--</span>
+          </div>
+
+          <!-- Anti-Cheat Short Call Warning -->
+          <div id="modalShortWarning" class="hidden mb-3 bg-amber-50 border border-amber-300 text-amber-900 p-2.5 rounded-xl text-xs flex items-start space-x-2">
+            <i class="fa-solid fa-triangle-exclamation text-amber-600 mt-0.5 shrink-0"></i>
+            <div id="modalShortWarningText">
+              <strong>Short Call Warning:</strong> A genuine customer conversation takes at least 15s. If no one picked up, please choose "No Answer".
+            </div>
+          </div>
+
           <!-- Callback date/time (shown when outcome is Callback) -->
           <div id="callbackFields" class="hidden mb-3 space-y-1.5">
             <label class="text-xs font-bold text-slate-700 flex items-center space-x-1">
@@ -468,22 +485,37 @@
         reportPresence('offline');
       });
 
-      // 4. Tab Visibility (minimizing app or locking screen)
+      // 4. Tab Visibility (dialer away tracking + background detection)
       document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'hidden') {
-          // If away for more than 90 seconds, mark as offline
+          // Agent left browser into phone dialer
+          if (activeTimerCardId && activeCallState[activeTimerCardId]) {
+            activeCallState[activeTimerCardId].leftAt = Date.now();
+          }
           if (awayGraceTimer) clearTimeout(awayGraceTimer);
           awayGraceTimer = setTimeout(() => {
             reportPresence('offline');
           }, 90000);
         } else {
-          // Came back to the tab -> immediately Online!
+          // Agent returned from phone dialer back into the app!
           if (awayGraceTimer) {
             clearTimeout(awayGraceTimer);
             awayGraceTimer = null;
           }
           if (currentUser) {
             reportPresence('online');
+          }
+          // Accurately measure total away talk time in dialer
+          if (activeTimerCardId && activeCallState[activeTimerCardId] && activeCallState[activeTimerCardId].startedAt) {
+            const awaySec = Math.round((Date.now() - activeCallState[activeTimerCardId].startedAt) / 1000);
+            activeCallState[activeTimerCardId].duration = Math.max(awaySec, timerSeconds);
+            const timerEl = document.getElementById(`timer-${activeTimerCardId}`);
+            if (timerEl) {
+              const m = Math.floor(activeCallState[activeTimerCardId].duration / 60);
+              const s = activeCallState[activeTimerCardId].duration % 60;
+              timerEl.textContent = `⏱ ${m}:${String(s).padStart(2,'0')} (Dialer Verified)`;
+              timerEl.className = activeCallState[activeTimerCardId].duration >= 15 ? 'text-xs font-bold text-emerald-600 font-mono' : 'text-xs font-bold text-amber-600 font-mono';
+            }
           }
         }
       });
@@ -534,27 +566,64 @@
       }
     }
 
-    // ===== CALL TIMER =====
-    function startTimer(cardId) {
+    // ===== ANTI-CHEAT CALL TRACKING & TIMER =====
+    let activeCallState = {}; // { [id]: { startedAt: number, duration: number, called: boolean } }
+
+    function handleInitiateCall(cardId) {
       if (timerInterval) clearInterval(timerInterval);
       timerSeconds = 0;
       activeTimerCardId = cardId;
-      const el = document.getElementById(`timer-${cardId}`);
-      if (el) el.classList.remove('hidden');
+      
+      const now = Date.now();
+      activeCallState[cardId] = {
+        startedAt: now,
+        duration: 0,
+        called: true
+      };
+
+      // 1. Show timer badge
+      const timerEl = document.getElementById(`timer-${cardId}`);
+      if (timerEl) {
+        timerEl.classList.remove('hidden');
+        timerEl.className = 'text-xs font-bold text-blue-600 font-mono';
+        timerEl.textContent = '⏱ 00:00 (In Call)';
+      }
+
+      // 2. Update Call button style to active state
+      const callBtn = document.getElementById(`callBtn-${cardId}`);
+      if (callBtn) {
+        callBtn.className = 'bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs px-3 py-2 rounded-lg shadow-sm flex items-center space-x-1.5 transition animate-pulse';
+        callBtn.innerHTML = '<i class="fa-solid fa-phone-volume"></i><span>Calling...</span>';
+      }
+
+      // 3. Unlock outcome buttons for this contact
+      const outcomesBox = document.getElementById(`outcomes-${cardId}`);
+      if (outcomesBox) {
+        outcomesBox.classList.remove('opacity-40', 'pointer-events-none');
+      }
+      const callHint = document.getElementById(`callHint-${cardId}`);
+      if (callHint) {
+        callHint.classList.add('hidden');
+      }
 
       timerInterval = setInterval(() => {
         timerSeconds++;
+        if (activeCallState[cardId]) {
+          activeCallState[cardId].duration = Math.max(activeCallState[cardId].duration, timerSeconds);
+        }
         const m = Math.floor(timerSeconds / 60);
         const s = timerSeconds % 60;
         const formatted = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
-        const timerEl = document.getElementById(`timer-${cardId}`);
-        if (timerEl) timerEl.textContent = `⏱ ${formatted}`;
+        if (timerEl) timerEl.textContent = `⏱ ${formatted} (Calling)`;
       }, 1000);
     }
 
     function stopTimer() {
       if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
-      const duration = timerSeconds;
+      let duration = timerSeconds;
+      if (activeTimerCardId && activeCallState[activeTimerCardId]) {
+        duration = Math.max(activeCallState[activeTimerCardId].duration, timerSeconds);
+      }
       timerSeconds = 0;
       activeTimerCardId = null;
       return duration;
@@ -750,7 +819,7 @@
                 <span class="hidden sm:inline">Copy</span>
               </button>
 
-              <a href="tel:${esc(c.formatted_phone)}" onclick="startTimer(${c.id})"
+              <a id="callBtn-${c.id}" href="tel:${esc(c.formatted_phone)}" onclick="handleInitiateCall(${c.id})"
                 class="bg-emerald-600 hover:bg-emerald-500 active:scale-90 text-white font-semibold text-xs px-3 py-2 rounded-lg shadow-sm flex items-center space-x-1 transition">
                 <i class="fa-solid fa-phone text-xs"></i>
                 <span>Call</span>
@@ -763,10 +832,16 @@
             </div>
           </div>
 
-          <!-- Outcome Buttons -->
+          <!-- Outcome Buttons with Anti-Cheat Protection -->
           <div class="mt-2.5">
-            <div class="text-[11px] font-semibold text-slate-400 mb-1.5">Log Call Result:</div>
-            <div class="grid grid-cols-2 sm:grid-cols-3 gap-1.5 text-xs">
+            <div class="flex items-center justify-between mb-1.5">
+              <span class="text-[11px] font-semibold text-slate-400">Log Call Result:</span>
+              <span id="callHint-${c.id}" class="text-[10px] text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md flex items-center space-x-1">
+                <i class="fa-solid fa-lock text-[9px] text-amber-600"></i>
+                <span>Tap Call first to unlock</span>
+              </span>
+            </div>
+            <div id="outcomes-${c.id}" class="grid grid-cols-2 sm:grid-cols-3 gap-1.5 text-xs opacity-40 pointer-events-none transition-all duration-300">
               <button onclick="requestOutcome(${c.id}, 'interested', '${esc(c.name)}')"
                 class="bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 font-medium py-2 px-2 rounded-lg text-left truncate transition flex items-center space-x-1.5 active:scale-95">
                 <span class="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
@@ -910,12 +985,42 @@
       }
     };
 
-    // ===== OUTCOME MODAL =====
+    // ===== OUTCOME MODAL WITH ANTI-CHEAT GUARDS =====
     function requestOutcome(id, outcomeKey, name) {
+      // 1. Anti-Cheat: Must tap Call first
+      const callData = activeCallState[id];
+      if (!callData || !callData.called) {
+        showToast("⚠️ Anti-Cheat: You must tap 'Call' to dial the customer before logging an outcome!", "bg-red-600");
+        return;
+      }
+
+      // Calculate talk duration (takes the highest of dialer elapsed or timer)
+      let currentDuration = callData.duration || 0;
+      if (callData.startedAt) {
+        const elapsed = Math.round((Date.now() - callData.startedAt) / 1000);
+        currentDuration = Math.max(currentDuration, elapsed, timerSeconds);
+      }
+
+      // 2. Anti-Cheat: Minimum call duration for real conversations
+      const minThresholds = {
+        'interested': 20,
+        'refused': 15,
+        'already_paid': 15
+      };
+
+      const minReq = minThresholds[outcomeKey];
+      const isShortCall = minReq && currentDuration < minReq;
+
+      // Hard block: if an agent claims "Interested" in under 10 seconds, reject it
+      if (outcomeKey === 'interested' && currentDuration < 10) {
+        showToast(`⚠️ Anti-Cheat: Call was only ${currentDuration}s! Customer payment agreement takes at least 20s. Please call customer or select 'No Answer'.`, "bg-red-600");
+        return;
+      }
+
       const cfg = OUTCOME_CONFIG[outcomeKey] || OUTCOME_CONFIG['interested'];
       const isCallback = outcomeKey === 'callback';
 
-      pendingOutcome = { id, outcome: cfg.outcome, outcomeKey, name, isCallback };
+      pendingOutcome = { id, outcome: cfg.outcome, outcomeKey, name, isCallback, duration: currentDuration };
 
       document.getElementById('modalTitle').textContent = `${cfg.title} — ${name}`;
       document.getElementById('modalSubtitle').textContent = cfg.subtitle;
@@ -927,6 +1032,27 @@
 
       document.getElementById('notesLabel').innerHTML = `${cfg.label} <span class="text-red-500">*</span>`;
       
+      // Update Duration badge in modal
+      const durMin = Math.floor(currentDuration / 60);
+      const durSec = currentDuration % 60;
+      const durEl = document.getElementById('modalDurationText');
+      if (durEl) {
+        durEl.textContent = `${durMin}:${String(durSec).padStart(2,'0')}`;
+        durEl.className = currentDuration >= (minReq || 5) ? 'font-mono font-black text-emerald-700' : 'font-mono font-black text-amber-600';
+      }
+
+      // Show/hide short call warning
+      const warnBox = document.getElementById('modalShortWarning');
+      const warnText = document.getElementById('modalShortWarningText');
+      if (warnBox && warnText) {
+        if (isShortCall) {
+          warnBox.classList.remove('hidden');
+          warnText.innerHTML = `<strong>Short Call Warning (only ${currentDuration}s recorded):</strong> A genuine conversation takes at least ${minReq}s. If no one picked up, choose <strong>"No Answer"</strong> instead.`;
+        } else {
+          warnBox.classList.add('hidden');
+        }
+      }
+
       const textarea = document.getElementById('outcomeNotes');
       textarea.value = '';
       textarea.placeholder = cfg.placeholder;
@@ -979,19 +1105,20 @@
       const notes = document.getElementById('outcomeNotes').value.trim();
       const callbackAt = document.getElementById('callbackDatetime').value;
 
-      if (!notes) {
+      if (!notes || notes.length < 3) {
+        document.getElementById('notesError').textContent = 'Please enter or select a comment (at least 3 characters).';
         document.getElementById('notesError').classList.remove('hidden');
         return;
       }
 
       closeModal();
-      logOutcome(pendingOutcome.id, pendingOutcome.outcome, notes, pendingOutcome.isCallback ? callbackAt : null);
+      logOutcome(pendingOutcome.id, pendingOutcome.outcome, notes, pendingOutcome.isCallback ? callbackAt : null, pendingOutcome.duration);
     }
 
     // ===== LOG OUTCOME =====
-    async function logOutcome(id, outcome, notes = '', callbackAt = null) {
+    async function logOutcome(id, outcome, notes = '', callbackAt = null, callDuration = null) {
       const card = document.getElementById(`card-${id}`);
-      const duration = stopTimer();
+      const duration = callDuration !== null ? callDuration : stopTimer();
 
       const isCallback = outcome.toLowerCase().includes('callback');
 

@@ -792,7 +792,9 @@
                   <tr>
                     <th class="py-3 px-3">Username</th>
                     <th class="py-3 px-3">Name</th>
-                    <th class="py-3 px-3 text-center">Shift</th>
+                    <th class="py-3 px-3 text-center">Shift Status</th>
+                    <th class="py-3 px-3 text-center">Avg Talk Time</th>
+                    <th class="py-3 px-3 text-center">Audit Check</th>
                     <th class="py-3 px-3 text-center">Daily Goal</th>
                     <th class="py-3 px-3 text-center">Active Assigned</th>
                     <th class="py-3 px-3 text-center">Completed Calls</th>
@@ -800,7 +802,7 @@
                   </tr>
                 </thead>
                 <tbody id="usersTableBody" class="divide-y divide-slate-100">
-                  <tr><td colspan="7" class="py-6 text-center text-slate-400">Loading team...</td></tr>
+                  <tr><td colspan="9" class="py-6 text-center text-slate-400">Loading team...</td></tr>
                 </tbody>
               </table>
             </div>
@@ -1417,6 +1419,18 @@
                   <span>${u.shift_status === 'online' ? 'Working Now' : 'Offline'}</span>
                 </button>
               </td>
+              <td class="py-3 px-3 text-center font-mono font-bold text-slate-700">${u.formatted_avg_duration || '0m 00s'}</td>
+              <td class="py-3 px-3 text-center">
+                ${u.has_fraud_flag ? `
+                  <span class="inline-flex items-center space-x-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-700 border border-red-300" title="More than 25% of positive calls logged under 15s">
+                    <span>🚩</span><span>${u.suspicious_calls_today || 0} Fast</span>
+                  </span>
+                ` : `
+                  <span class="inline-flex items-center space-x-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    <span>✓ Normal</span>
+                  </span>
+                `}
+              </td>
               <td class="py-3 px-3 text-center font-bold text-slate-700">${u.daily_target || 30}</td>
               <td class="py-3 px-3 text-center font-bold">${u.active_assigned || 0}</td>
               <td class="py-3 px-3 text-center font-bold text-emerald-600">${u.completed_calls || 0}</td>
@@ -1428,7 +1442,7 @@
                 `}
               </td>
             </tr>
-          `).join('');
+          `).join('') || '<tr><td colspan="9" class="py-6 text-center text-slate-400">No agents registered yet.</td></tr>';
         }
       } catch (e) {
         console.error(e);
@@ -1512,9 +1526,25 @@
           const durationSec = item.call_duration || 0;
           const durMin = Math.floor(durationSec / 60);
           const durRem = durationSec % 60;
-          const durStr = durationSec > 0 ? `${durMin}:${String(durRem).padStart(2,'0')}` : '--';
+          const isFastSuspicious = durationSec < 15 && durationSec > 0 && (
+            (item.outcome || '').includes('Interested') ||
+            (item.outcome || '').includes('Refused') ||
+            (item.outcome || '').includes('Paid')
+          );
 
-          const smsWarmup = encodeURIComponent(`Muraho ${item.name}, turakumenyesha ko Canal+ igiye kuguhamagara ku bijyanye na serivisi yanyu. — Canal+ Rwanda`);
+          let durationBadge = '<span class="text-slate-400 font-mono text-xs">--</span>';
+          if (durationSec > 0) {
+            const timeFormatted = durMin > 0 ? `${durMin}m ${durRem}s` : `${durRem}s`;
+            if (isFastSuspicious) {
+              durationBadge = `<span class="inline-flex items-center space-x-1 px-2 py-0.5 rounded-md text-[11px] font-mono font-bold bg-red-100 text-red-700 border border-red-300" title="Flagged: Suspiciously fast positive/refusal log (<15s)"><span>🚩</span><span>${timeFormatted} (Fast)</span></span>`;
+            } else if (durationSec >= 20) {
+              durationBadge = `<span class="inline-flex items-center space-x-1 px-2 py-0.5 rounded-md text-[11px] font-mono font-bold bg-emerald-50 text-emerald-700 border border-emerald-200" title="Dialer verified talk time"><span>⏱</span><span>${timeFormatted}</span></span>`;
+            } else {
+              durationBadge = `<span class="inline-flex items-center space-x-1 px-2 py-0.5 rounded-md text-[11px] font-mono font-medium text-slate-600 bg-slate-100" title="Call duration"><span>⏱</span><span>${timeFormatted}</span></span>`;
+            }
+          }
+
+          const smsWarmup = encodeURIComponent(`Muraho ${item.name}, turakumenyesha ko Canalbox igiye kuguhamagara ku bijyanye na interineti yanyu ya fibre optique. — Canalbox Rwanda`);
 
           return `
             <tr class="hover:bg-slate-50 transition">
@@ -1526,7 +1556,7 @@
                 <div class="text-[10px] text-slate-400 font-mono">${escapeHtml(item.sub_id || '')}</div>
               </td>
               <td class="py-3 px-3 font-mono font-medium text-blue-700">${escapeHtml(item.display_phone || item.phone)}</td>
-              <td class="py-3 px-3 text-center font-mono text-slate-600 text-xs">${durStr}</td>
+              <td class="py-3 px-3 text-center">${durationBadge}</td>
               <td class="py-3 px-3 text-slate-600">${escapeHtml(item.offer || '--')}</td>
               <td class="py-3 px-3 text-slate-600">${escapeHtml(item.city || '--')}</td>
               <td class="py-3 px-3 font-mono font-bold text-slate-700">${escapeHtml(item.assigned_to || '--')}</td>
