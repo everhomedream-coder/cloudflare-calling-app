@@ -5,4 +5,4 @@ pages_build_output_dir = "./public"
 [[d1_databases]]
 binding = "DB"
 database_name = "canal-calling-db"
-database_id = "canal-calling-db"
+database_id = "9c1f503e-34a4-4a23-977b-3bca1a8fa1b5"
