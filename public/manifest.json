@@ -1,0 +1,18 @@
+{
+  "name": "Canal+ Rwanda Telesales",
+  "short_name": "Canal+ Calling",
+  "description": "Subscriber win-back and telesales application for Canal+ Rwanda agents.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#1e3a8a",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/logo.jpg",
+      "sizes": "192x192 512x512",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    }
+  ]
+}

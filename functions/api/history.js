@@ -1,5 +1,5 @@
 // GET /api/history
-// Returns the 50 most recently completed calls.
+// Returns the 50 most recently completed calls with agent attribution and duration.
 
 export async function onRequestGet(context) {
   try {
@@ -12,7 +12,11 @@ export async function onRequestGet(context) {
     }
 
     const { results } = await db.prepare(
-      "SELECT id, sub_id, name, display_phone, formatted_phone, offer, city, outcome, notes, called_at FROM contacts WHERE display_status = 'called' ORDER BY called_at DESC LIMIT 50"
+      `SELECT id, sub_id, name, display_phone, formatted_phone, offer, city, outcome, notes, called_at, assigned_to, call_duration, callback_at 
+       FROM contacts 
+       WHERE display_status = 'called' 
+       ORDER BY called_at DESC 
+       LIMIT 50`
     ).all();
 
     return new Response(JSON.stringify({ history: results || [] }), {
@@ -25,4 +29,3 @@ export async function onRequestGet(context) {
     });
   }
 }
-

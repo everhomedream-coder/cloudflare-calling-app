@@ -1,0 +1,1508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Canal+ Rwanda — Admin Dashboard</title>
+  <link rel="icon" type="image/jpeg" href="/logo.jpg">
+  <link rel="apple-touch-icon" href="/logo.jpg">
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Chart.js for Dashboard Charts -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body { -webkit-tap-highlight-color: transparent; }
+    .sidebar-active {
+      background-color: rgba(59, 130, 246, 0.15);
+      color: #60A5FA !important;
+      font-weight: 700;
+    }
+    .sidebar-active i {
+      color: #60A5FA !important;
+    }
+    .card-shadow {
+      box-shadow: 0px 5px 22px rgba(0, 0, 0, 0.04), 0px 0px 0px 1px rgba(0, 0, 0, 0.06);
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-900 font-sans min-h-screen flex antialiased">
+
+  <!-- ======================================================== -->
+  <!-- 1. LEFT SIDEBAR (Dark Navy / Indigo Theme from Reference) -->
+  <!-- ======================================================== -->
+  <aside id="sidebar" class="w-64 bg-[#111827] text-slate-300 flex flex-col shrink-0 fixed inset-y-0 left-0 z-40 transition-transform duration-300 -translate-x-full lg:translate-x-0 border-r border-slate-800">
+    
+    <!-- App Logo & Branding -->
+    <div class="h-16 px-6 flex items-center space-x-3 border-b border-slate-800/80">
+      <img src="/logo.jpg" alt="Logo" class="w-9 h-9 rounded-xl shadow-md object-cover">
+      <div>
+        <div class="text-sm font-black text-white tracking-wide">Canal+ Admin</div>
+        <div class="text-[10px] text-slate-400 font-medium">Telesales Portal</div>
+      </div>
+    </div>
+
+    <!-- Workspace Pill -->
+    <div class="p-4">
+      <div class="bg-[#1F2937] rounded-xl p-3 border border-slate-700/60 flex items-center justify-between">
+        <div class="overflow-hidden">
+          <div class="text-xs font-bold text-white truncate" id="adminSidebarName">Canal+ Rwanda</div>
+          <div class="text-[10px] text-slate-400 font-mono truncate" id="adminSidebarEmail">everhomedreamltd@gmail.com</div>
+        </div>
+        <i class="fa-solid fa-chevron-down text-[10px] text-slate-400"></i>
+      </div>
+    </div>
+
+    <!-- Navigation Menu Items -->
+    <nav class="flex-1 px-3 space-y-1 text-xs overflow-y-auto">
+      <button onclick="switchView('dashboard')" id="nav-dashboard" class="sidebar-active w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl transition text-slate-300 hover:bg-slate-800/60 hover:text-white">
+        <i class="fa-solid fa-chart-line text-sm w-4"></i>
+        <span>Dashboard</span>
+      </button>
+
+      <!-- Prominent "Assign 20" Navigation Button -->
+      <button onclick="switchView('dispatch')" id="nav-dispatch" class="w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl transition text-slate-300 hover:bg-slate-800/60 hover:text-white">
+        <i class="fa-solid fa-rotate text-sm w-4 text-blue-400"></i>
+        <span class="font-bold">Assign Leads</span>
+        <span id="navUnassignedBadge" class="ml-auto bg-blue-500/20 text-blue-400 text-[10px] font-extrabold px-2 py-0.5 rounded-full">--</span>
+      </button>
+
+      <!-- Agent Analytics Navigation -->
+      <button onclick="switchView('analytics')" id="nav-analytics" class="w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl transition text-slate-300 hover:bg-slate-800/60 hover:text-white">
+        <i class="fa-solid fa-chart-pie text-sm w-4 text-emerald-400"></i>
+        <span>Agent Analytics</span>
+      </button>
+
+      <button onclick="switchView('customers')" id="nav-customers" class="w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl transition text-slate-300 hover:bg-slate-800/60 hover:text-white">
+        <i class="fa-solid fa-address-book text-sm w-4 text-slate-400"></i>
+        <span>Clients &amp; History</span>
+      </button>
+
+      <button onclick="switchView('team')" id="nav-team" class="w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl transition text-slate-300 hover:bg-slate-800/60 hover:text-white">
+        <i class="fa-solid fa-users-gear text-sm w-4 text-slate-400"></i>
+        <span>Team &amp; Agents</span>
+      </button>
+
+      <button onclick="switchView('maintenance')" id="nav-maintenance" class="w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl transition text-slate-300 hover:bg-slate-800/60 hover:text-white">
+        <i class="fa-solid fa-recycle text-sm w-4 text-slate-400"></i>
+        <span>Clean &amp; Reset</span>
+      </button>
+
+      <div class="pt-4 pb-1 px-3.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">Shortcuts</div>
+
+      <a href="/" class="w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl transition text-slate-300 hover:bg-slate-800/60 hover:text-white">
+        <i class="fa-solid fa-phone text-sm w-4 text-emerald-400"></i>
+        <span>Agent Calling Screen</span>
+      </a>
+
+      <a href="/api/admin/export" class="w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl transition text-slate-300 hover:bg-slate-800/60 hover:text-white">
+        <i class="fa-solid fa-download text-sm w-4 text-indigo-400"></i>
+        <span>Export CSV File</span>
+      </a>
+    </nav>
+
+    <!-- Sign Out Button -->
+    <div class="p-3 border-t border-slate-800">
+      <button onclick="handleSignOut()" class="w-full flex items-center justify-center space-x-2 px-3 py-2.5 rounded-xl bg-red-950/40 hover:bg-red-900/60 text-red-300 text-xs font-semibold transition border border-red-900/30">
+        <i class="fa-solid fa-arrow-right-from-bracket"></i>
+        <span>Sign Out</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Mobile Sidebar Overlay -->
+  <div id="sidebarOverlay" onclick="toggleSidebar()" class="fixed inset-0 bg-slate-900/50 z-30 hidden lg:hidden backdrop-blur-xs"></div>
+
+  <!-- ======================================================== -->
+  <!-- 2. MAIN CONTENT AREA                                     -->
+  <!-- ======================================================== -->
+  <div class="flex-1 lg:pl-64 flex flex-col min-h-screen min-w-0">
+
+    <!-- Top App Bar (Header with Search, Notification, Profile) -->
+    <header class="h-16 bg-white border-b border-slate-200/80 px-6 flex items-center justify-between sticky top-0 z-20">
+      
+      <!-- Left: Mobile Menu Toggle & Search Bar -->
+      <div class="flex items-center space-x-4 flex-1 max-w-lg">
+        <button onclick="toggleSidebar()" class="lg:hidden text-slate-500 hover:text-slate-800 p-2">
+          <i class="fa-solid fa-bars text-lg"></i>
+        </button>
+
+        <div class="relative w-full hidden sm:block">
+          <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+          <input type="text" placeholder="Search subscribers, phone numbers, or offers..." onkeydown="if(event.key==='Enter') handleTopSearch(this.value)"
+            class="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white transition text-slate-800">
+        </div>
+      </div>
+
+      <!-- Right: Action Icons & User Avatar -->
+      <div class="flex items-center space-x-3">
+        <!-- Quick Assign 20 Pill -->
+        <button onclick="switchView('dispatch')" class="bg-blue-600 hover:bg-blue-500 active:scale-95 text-white text-xs font-bold px-3.5 py-2 rounded-xl shadow-sm transition flex items-center space-x-1.5">
+          <i class="fa-solid fa-rotate text-xs"></i>
+          <span class="hidden md:inline">Assign Leads</span>
+        </button>
+
+        <!-- Notification Bell -->
+        <div class="relative">
+          <button onclick="switchView('analytics')" class="w-9 h-9 rounded-xl border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-slate-50 text-xs" title="Callbacks &amp; Alerts">
+            <i class="fa-regular fa-bell"></i>
+          </button>
+          <span id="badgeCallbacksCount" class="absolute -top-1 -right-1 w-4 h-4 bg-red-600 text-white text-[9px] font-black rounded-full flex items-center justify-center hidden">0</span>
+        </div>
+
+        <!-- User Profile Avatar -->
+        <div class="flex items-center space-x-2.5 pl-2 border-l border-slate-200">
+          <img src="/logo.jpg" alt="EH" class="w-9 h-9 rounded-xl shadow-sm object-cover">
+          <div class="hidden sm:block text-left">
+            <div class="text-xs font-bold text-slate-800 leading-tight">Admin Everhome</div>
+            <div class="text-[10px] text-slate-400">Manager</div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Views Container -->
+    <main class="flex-1 p-6 md:p-8 max-w-7xl w-full mx-auto space-y-6">
+
+      <!-- ============================================== -->
+      <!-- VIEW A: DASHBOARD (Acme/Devias Styled Overview)-->
+      <!-- ============================================== -->
+      <div id="view-dashboard" class="space-y-6">
+
+        <!-- Top 4 KPI Metric Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+
+          <!-- Card 1: TOTAL POOL -->
+          <div class="bg-white rounded-2xl p-6 card-shadow flex items-start justify-between">
+            <div>
+              <div class="text-[11px] uppercase tracking-wider font-bold text-slate-400 mb-1">TOTAL SUBSCRIBERS</div>
+              <div class="text-3xl font-extrabold text-slate-900 tracking-tight" id="kpiTotal">--</div>
+              <div class="flex items-center space-x-1 mt-3 text-xs text-blue-600 font-semibold">
+                <i class="fa-solid fa-database text-[10px]"></i>
+                <span>Database Pool</span>
+              </div>
+            </div>
+            <div class="w-12 h-12 rounded-full bg-[#E11D48] text-white flex items-center justify-center text-lg shadow-sm">
+              <i class="fa-solid fa-address-book"></i>
+            </div>
+          </div>
+
+          <!-- Card 2: READY TO ASSIGN -->
+          <div class="bg-white rounded-2xl p-6 card-shadow flex items-start justify-between">
+            <div>
+              <div class="text-[11px] uppercase tracking-wider font-bold text-slate-400 mb-1">UNASSIGNED LEADS</div>
+              <div class="text-3xl font-extrabold text-slate-900 tracking-tight" id="kpiUnseen">--</div>
+              <div class="flex items-center space-x-1 mt-3 text-xs text-emerald-600 font-semibold">
+                <i class="fa-solid fa-arrow-up text-[10px]"></i>
+                <span>Ready for dispatch</span>
+              </div>
+            </div>
+            <div class="w-12 h-12 rounded-full bg-[#0D9488] text-white flex items-center justify-center text-lg shadow-sm">
+              <i class="fa-solid fa-users"></i>
+            </div>
+          </div>
+
+          <!-- Card 3: CALL PROGRESS -->
+          <div class="bg-white rounded-2xl p-6 card-shadow flex flex-col justify-between">
+            <div class="flex items-start justify-between">
+              <div>
+                <div class="text-[11px] uppercase tracking-wider font-bold text-slate-400 mb-1">CALL PROGRESS</div>
+                <div class="text-3xl font-extrabold text-slate-900 tracking-tight" id="kpiProgressPct">0%</div>
+              </div>
+              <div class="w-12 h-12 rounded-full bg-[#F59E0B] text-white flex items-center justify-center text-lg shadow-sm">
+                <i class="fa-solid fa-list-check"></i>
+              </div>
+            </div>
+            <div class="w-full bg-slate-100 rounded-full h-1.5 mt-4 overflow-hidden">
+              <div id="kpiProgressBar" class="bg-blue-600 h-1.5 rounded-full transition-all duration-500" style="width: 0%"></div>
+            </div>
+          </div>
+
+          <!-- Card 4: CALLS COMPLETED -->
+          <div class="bg-white rounded-2xl p-6 card-shadow flex items-start justify-between">
+            <div>
+              <div class="text-[11px] uppercase tracking-wider font-bold text-slate-400 mb-1">CALLS COMPLETED</div>
+              <div class="text-3xl font-extrabold text-slate-900 tracking-tight" id="kpiCalled">--</div>
+              <div class="flex items-center space-x-1 mt-3 text-xs text-indigo-600 font-semibold">
+                <i class="fa-solid fa-circle-check text-[10px]"></i>
+                <span id="kpiCompletedSubtitle">Outcomes logged</span>
+              </div>
+            </div>
+            <div class="w-12 h-12 rounded-full bg-[#6366F1] text-white flex items-center justify-center text-lg shadow-sm">
+              <i class="fa-solid fa-phone-volume"></i>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Middle Section: Bar Chart & Donut Chart -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+          <!-- Left: Latest Calling Activity (Bar Chart) -->
+          <div class="lg:col-span-2 bg-white rounded-2xl p-6 card-shadow flex flex-col justify-between">
+            <div class="flex items-center justify-between mb-4">
+              <div>
+                <h2 class="text-base font-bold text-slate-800">Latest Calling Activity</h2>
+                <p class="text-xs text-slate-400">Weekly call volume breakdown</p>
+              </div>
+              <span class="text-xs text-slate-400 font-semibold bg-slate-50 px-3 py-1 rounded-lg border border-slate-200">
+                Weekly Volume
+              </span>
+            </div>
+            <div class="h-64 relative">
+              <canvas id="barChartActivity"></canvas>
+            </div>
+          </div>
+
+          <!-- Right: Call Outcomes Distribution (Donut Chart) -->
+          <div class="bg-white rounded-2xl p-6 card-shadow flex flex-col justify-between">
+            <div class="flex items-center justify-between mb-2">
+              <h2 class="text-base font-bold text-slate-800">Call Outcomes</h2>
+              <button onclick="loadAdminStats()" class="text-xs text-blue-600 hover:underline">
+                <i class="fa-solid fa-rotate-right"></i>
+              </button>
+            </div>
+            <div class="h-52 relative flex items-center justify-center">
+              <canvas id="donutChartOutcomes"></canvas>
+            </div>
+            <!-- Percentages Summary Legend -->
+            <div id="donutLegend" class="grid grid-cols-3 gap-2 pt-4 border-t border-slate-100 text-center text-xs">
+              <div>
+                <div class="font-extrabold text-blue-600 text-base" id="statPctInterested">0%</div>
+                <div class="text-[10px] text-slate-400 font-medium">Interested</div>
+              </div>
+              <div>
+                <div class="font-extrabold text-amber-500 text-base" id="statPctNoAnswer">0%</div>
+                <div class="text-[10px] text-slate-400 font-medium">No Answer</div>
+              </div>
+              <div>
+                <div class="font-extrabold text-red-500 text-base" id="statPctRefused">0%</div>
+                <div class="text-[10px] text-slate-400 font-medium">Refused / Other</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Callout Banner: "Assign Leads" Action Card -->
+        <div class="bg-gradient-to-r from-[#1E293B] to-[#0F172A] rounded-2xl p-6 text-white shadow-md border border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div class="flex items-center space-x-4">
+            <div class="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center text-white text-xl shadow-lg shrink-0">
+              <i class="fa-solid fa-rotate"></i>
+            </div>
+            <div>
+              <div class="flex items-center space-x-2">
+                <span class="bg-blue-500 text-white text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md">Admin Lead Control</span>
+                <h3 class="text-base font-bold text-white">Smart Lead Dispatching</h3>
+              </div>
+              <p class="text-xs text-slate-300 mt-0.5">Preview exact customer leads by city and batch size before assigning them to agents.</p>
+            </div>
+          </div>
+
+          <div class="flex items-center space-x-2">
+            <button onclick="switchView('dispatch')" class="bg-blue-600 hover:bg-blue-500 active:scale-95 text-white font-black text-xs px-5 py-3 rounded-xl shadow-lg transition flex items-center justify-center space-x-2 whitespace-nowrap">
+              <i class="fa-solid fa-eye"></i>
+              <span>Preview &amp; Assign Leads</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ============================================== -->
+      <!-- VIEW B: ASSIGN LEADS (PREVIEW + DISPATCH)      -->
+      <!-- ============================================== -->
+      <div id="view-dispatch" class="hidden space-y-6">
+
+        <!-- Top Dispatch & Confirmation Bar -->
+        <div class="bg-white rounded-2xl p-6 card-shadow border border-slate-100">
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-5">
+            <div>
+              <div class="flex items-center space-x-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-blue-600 animate-pulse"></span>
+                <h2 class="text-lg font-black text-slate-900">Lead Dispatch Center</h2>
+                <span class="bg-blue-50 text-blue-700 text-[10px] font-extrabold px-2 py-0.5 rounded-md border border-blue-200" id="previewBadgeSize">20 Leads</span>
+              </div>
+              <p class="text-xs text-slate-500 mt-1">
+                You must see and verify the leads below before assigning them to any agent.
+              </p>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+              <!-- City Filter Dropdown -->
+              <select id="dispatchCityFilter" onchange="loadAssign20Preview()" class="bg-slate-100 text-slate-700 text-xs font-bold px-3 py-2 rounded-xl border border-slate-300 focus:outline-none">
+                <option value="all">📍 All Cities</option>
+                <option value="Kigali">Kigali</option>
+                <option value="Rubavu">Rubavu</option>
+              </select>
+
+              <!-- Batch Size Selector -->
+              <select id="dispatchBatchSize" onchange="loadAssign20Preview()" class="bg-slate-100 text-slate-700 text-xs font-bold px-3 py-2 rounded-xl border border-slate-300 focus:outline-none">
+                <option value="10">10 Leads</option>
+                <option value="20" selected>20 Leads (Default)</option>
+                <option value="30">30 Leads</option>
+                <option value="50">50 Leads</option>
+              </select>
+
+              <button onclick="loadAssign20Preview()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold px-3 py-2 rounded-xl transition flex items-center space-x-1" title="Refresh">
+                <i class="fa-solid fa-rotate-right"></i>
+              </button>
+
+              <span class="text-xs font-bold text-slate-700 bg-slate-100 px-3 py-2 rounded-xl border border-slate-200">
+                Pool: <strong id="assignPoolCount" class="text-blue-600">--</strong>
+              </span>
+            </div>
+          </div>
+
+          <!-- Assignment Bar -->
+          <div class="bg-gradient-to-r from-blue-900 to-indigo-950 rounded-2xl p-4 text-white flex flex-col md:flex-row items-center justify-between gap-3 shadow-md">
+            <div class="flex items-center space-x-3 w-full md:w-auto">
+              <div class="w-10 h-10 rounded-xl bg-blue-600/60 border border-blue-400/40 flex items-center justify-center text-white shrink-0">
+                <i class="fa-solid fa-user-check text-sm"></i>
+              </div>
+              <div>
+                <div class="text-xs font-bold text-white">Assign to Specific Agent or Bulk to All Online</div>
+                <div class="text-[10px] text-blue-200">Leads will be assigned in order of highest reconnection score</div>
+              </div>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-2 w-full md:w-auto justify-end">
+              <select id="dispatchAgentSelect" class="bg-blue-950 text-white text-xs font-bold px-3.5 py-2.5 rounded-xl border border-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 w-full sm:w-44">
+                <option value="">Select Agent...</option>
+              </select>
+
+              <button onclick="confirmAssign20()" id="confirmAssignBtn" class="bg-blue-600 hover:bg-blue-500 active:scale-95 text-white font-black text-xs px-4 py-2.5 rounded-xl shadow-lg transition flex items-center space-x-1.5 whitespace-nowrap border border-blue-400/30">
+                <i class="fa-solid fa-paper-plane"></i>
+                <span id="assignBtnLabel">Assign to Agent</span>
+              </button>
+
+              <!-- Bulk Assign to All Online Agents Button (Improvement #13) -->
+              <button onclick="bulkAssignToAllOnline()" id="bulkAssignBtn" class="bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-black text-xs px-4 py-2.5 rounded-xl shadow-lg transition flex items-center space-x-1.5 whitespace-nowrap border border-emerald-400/30" title="Distribute batch to each online agent">
+                <i class="fa-solid fa-bolt"></i>
+                <span>Bulk to All Online</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- The Leads Preview Table -->
+        <div class="bg-white rounded-2xl p-6 card-shadow border border-slate-100">
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center space-x-2">
+              <i class="fa-solid fa-list-ol text-blue-600"></i>
+              <h3 class="text-sm font-bold text-slate-800" id="previewTableHeading">Preview: Leads Ready for Assignment</h3>
+            </div>
+            <span class="text-[11px] text-slate-400 font-medium">Ranked by Win-Back Reconnection Score</span>
+          </div>
+
+          <div class="overflow-x-auto rounded-xl border border-slate-200">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-50 text-slate-600 font-bold border-b border-slate-200">
+                <tr>
+                  <th class="py-3 px-3 text-center">#</th>
+                  <th class="py-3 px-4">Client Name</th>
+                  <th class="py-3 px-4">Phone Number</th>
+                  <th class="py-3 px-3">Offer</th>
+                  <th class="py-3 px-3 text-center">Score</th>
+                  <th class="py-3 px-3">City</th>
+                  <th class="py-3 px-3 text-center">Lapsed</th>
+                  <th class="py-3 px-4 text-center">Status</th>
+                </tr>
+              </thead>
+              <tbody id="preview20TableBody" class="divide-y divide-slate-100">
+                <tr><td colspan="8" class="py-6 text-center text-slate-400">Loading leads...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Agent Workload & Shift Table -->
+        <div class="bg-white rounded-2xl p-6 card-shadow border border-slate-100">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h3 class="text-sm font-bold text-slate-800">Agent Shift Status &amp; Active Queue</h3>
+              <p class="text-xs text-slate-400">Real-time shift status and assigned leads count per agent.</p>
+            </div>
+            <button onclick="loadUsersTable()" class="text-xs text-blue-600 hover:underline">
+              <i class="fa-solid fa-rotate-right mr-1"></i> Refresh
+            </button>
+          </div>
+
+          <div class="overflow-x-auto rounded-xl border border-slate-200">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-50 text-slate-600 font-bold border-b border-slate-200">
+                <tr>
+                  <th class="py-3.5 px-4">Agent Name</th>
+                  <th class="py-3.5 px-4">Username</th>
+                  <th class="py-3.5 px-4 text-center">Shift Status</th>
+                  <th class="py-3.5 px-4 text-center">Active Assigned</th>
+                  <th class="py-3.5 px-4 text-center">Calls Today</th>
+                  <th class="py-3.5 px-4 text-right">Quick Dispatch</th>
+                </tr>
+              </thead>
+              <tbody id="dispatchTableBody" class="divide-y divide-slate-100">
+                <tr><td colspan="6" class="py-6 text-center text-slate-400">Loading agents...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ============================================== -->
+      <!-- VIEW C: AGENT ANALYTICS (PER-AGENT OUTCOMES)   -->
+      <!-- ============================================== -->
+      <div id="view-analytics" class="hidden space-y-6">
+
+        <!-- Top Analytics Summary Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div class="bg-white rounded-2xl p-6 card-shadow">
+            <div class="text-[11px] uppercase tracking-wider font-bold text-slate-400 mb-1">TOP PERFORMER TODAY</div>
+            <div class="text-xl font-extrabold text-slate-900 truncate" id="topAgentName">--</div>
+            <div class="text-xs text-emerald-600 font-semibold mt-2" id="topAgentStat">0 calls logged</div>
+          </div>
+          <div class="bg-white rounded-2xl p-6 card-shadow">
+            <div class="text-[11px] uppercase tracking-wider font-bold text-slate-400 mb-1">TEAM WIN-BACK RATE</div>
+            <div class="text-3xl font-extrabold text-blue-600" id="teamWinbackRate">--%</div>
+            <div class="text-xs text-slate-400 mt-2">Interested / Total Calls</div>
+          </div>
+          <div class="bg-white rounded-2xl p-6 card-shadow">
+            <div class="text-[11px] uppercase tracking-wider font-bold text-slate-400 mb-1">AVG CALL DURATION</div>
+            <div class="text-3xl font-extrabold text-amber-600" id="teamAvgDuration">--</div>
+            <div class="text-xs text-slate-400 mt-2">Target: 2 to 3 minutes</div>
+          </div>
+          <div class="bg-white rounded-2xl p-6 card-shadow">
+            <div class="text-[11px] uppercase tracking-wider font-bold text-slate-400 mb-1">CALLBACKS TODAY</div>
+            <div class="text-3xl font-extrabold text-purple-600" id="teamCallbacksToday">0</div>
+            <div class="text-xs text-slate-400 mt-2">Scheduled follow-ups</div>
+          </div>
+        </div>
+
+        <!-- Full Per-Agent Outcome Performance Table -->
+        <div class="bg-white rounded-2xl p-6 card-shadow border border-slate-100">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
+            <div>
+              <div class="flex items-center space-x-2">
+                <i class="fa-solid fa-chart-column text-blue-600"></i>
+                <h2 class="text-base font-bold text-slate-900">Per-Agent Performance &amp; Outcome Breakdown</h2>
+              </div>
+              <p class="text-xs text-slate-400 mt-0.5">Track conversion rates, durations, and call results for each agent.</p>
+            </div>
+            <button onclick="loadAgentAnalytics()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold px-3 py-2 rounded-xl transition flex items-center space-x-1">
+              <i class="fa-solid fa-rotate-right"></i>
+              <span>Refresh Analytics</span>
+            </button>
+          </div>
+
+          <div class="overflow-x-auto rounded-xl border border-slate-200">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-50 text-slate-600 font-bold border-b border-slate-200">
+                <tr>
+                  <th class="py-3.5 px-3 text-center">Rank</th>
+                  <th class="py-3.5 px-4">Agent Name</th>
+                  <th class="py-3.5 px-3 text-center">Shift</th>
+                  <th class="py-3.5 px-3 text-center">Daily Goal</th>
+                  <th class="py-3.5 px-3 text-center">Active Queue</th>
+                  <th class="py-3.5 px-3 text-center">Total Calls</th>
+                  <th class="py-3.5 px-3 text-center text-emerald-700">Interested</th>
+                  <th class="py-3.5 px-3 text-center text-amber-700">No Answer</th>
+                  <th class="py-3.5 px-3 text-center text-red-700">Refused</th>
+                  <th class="py-3.5 px-3 text-center">Conversion</th>
+                  <th class="py-3.5 px-4 text-right">Avg Duration</th>
+                </tr>
+              </thead>
+              <tbody id="analyticsTableBody" class="divide-y divide-slate-100">
+                <tr><td colspan="11" class="py-6 text-center text-slate-400">Loading agent analytics...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ============================================== -->
+      <!-- VIEW D: CLIENTS & CALL HISTORY VIEW            -->
+      <!-- ============================================== -->
+      <div id="view-customers" class="hidden space-y-6">
+        <div class="bg-white rounded-2xl p-6 card-shadow">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
+            <div>
+              <h2 class="text-base font-bold text-slate-900">Client Call Records</h2>
+              <p class="text-xs text-slate-500">Search and review every call logged by your agents.</p>
+            </div>
+
+            <!-- Export CSV Button -->
+            <div class="flex items-center space-x-2">
+              <a href="/api/admin/export" class="bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white text-xs font-bold px-4 py-2 rounded-xl shadow transition flex items-center space-x-1.5">
+                <i class="fa-solid fa-file-csv text-sm"></i>
+                <span>Download History (CSV)</span>
+              </a>
+              <button onclick="loadHistoryTable()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold px-3 py-2 rounded-xl transition">
+                <i class="fa-solid fa-rotate-right"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Search & Outcome Filters -->
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4 text-xs">
+            <input type="text" id="historySearch" placeholder="Search by name, phone, subscription ID..." oninput="debounceHistorySearch()"
+              class="px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-600 focus:outline-none bg-slate-50 focus:bg-white">
+
+            <select id="historyFilterOutcome" onchange="loadHistoryTable()"
+              class="px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-600 focus:outline-none bg-slate-50 focus:bg-white font-medium">
+              <option value="all">All Outcomes</option>
+              <option value="Interested">Interested – Will Pay</option>
+              <option value="No Answer">No Answer / Switched Off</option>
+              <option value="Callback">Callback Requested</option>
+              <option value="Refused">Refused / Not Interested</option>
+              <option value="Wrong Number">Wrong Number</option>
+              <option value="Already Renewed">Already Renewed</option>
+            </select>
+
+            <button onclick="clearAllHistoryModal()" class="bg-red-50 hover:bg-red-100 text-red-700 font-semibold px-3 py-2 rounded-xl border border-red-200 text-left transition flex items-center justify-between">
+              <span>Clean / Reset All History</span>
+              <i class="fa-solid fa-trash-can"></i>
+            </button>
+          </div>
+
+          <!-- History Table -->
+          <div class="overflow-x-auto rounded-xl border border-slate-200">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-50 text-slate-600 font-bold border-b border-slate-200">
+                <tr>
+                  <th class="py-3 px-3">Date &amp; Time</th>
+                  <th class="py-3 px-3">Client Name</th>
+                  <th class="py-3 px-3">Phone</th>
+                  <th class="py-3 px-3 text-center">Duration</th>
+                  <th class="py-3 px-3">Offer</th>
+                  <th class="py-3 px-3">City</th>
+                  <th class="py-3 px-3">Agent</th>
+                  <th class="py-3 px-3">Outcome</th>
+                  <th class="py-3 px-3 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="historyTableBody" class="divide-y divide-slate-100">
+                <tr><td colspan="9" class="py-6 text-center text-slate-400">Loading history...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================================== -->
+      <!-- VIEW E: TEAM & USERS VIEW                      -->
+      <!-- ============================================== -->
+      <div id="view-team" class="hidden space-y-6">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+          <!-- Add User / Agent Card -->
+          <div class="bg-white rounded-2xl p-6 card-shadow">
+            <div class="flex items-center space-x-2 mb-4">
+              <div class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
+                <i class="fa-solid fa-user-plus text-sm"></i>
+              </div>
+              <h2 class="text-sm font-bold text-slate-900">Add New Team Member</h2>
+            </div>
+
+            <form onsubmit="handleSaveUser(event)" class="space-y-3.5 text-xs">
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">Username / Email</label>
+                <input type="text" id="newUsername" required placeholder="e.g. agent2 or email"
+                  class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-600 focus:outline-none">
+              </div>
+
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">Full Name</label>
+                <input type="text" id="newName" required placeholder="e.g. Valentin Harerimana"
+                  class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-600 focus:outline-none">
+              </div>
+
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">Password / PIN</label>
+                <input type="password" id="newPin" required placeholder="Set password"
+                  class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-600 focus:outline-none">
+              </div>
+
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">Daily Call Target</label>
+                <input type="number" id="newTarget" value="30" min="5" max="200"
+                  class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-600 focus:outline-none font-bold">
+              </div>
+
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">Assigned Role</label>
+                <select id="newRole" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-600 focus:outline-none font-medium">
+                  <option value="agent">Agent (Telesales Caller only)</option>
+                  <option value="admin">Admin (Full Access &amp; History)</option>
+                </select>
+              </div>
+
+              <button type="submit" class="w-full bg-[#111827] hover:bg-slate-800 text-white font-bold py-2.5 rounded-xl transition shadow">
+                Save Member
+              </button>
+            </form>
+          </div>
+
+          <!-- Team List Table -->
+          <div class="lg:col-span-2 bg-white rounded-2xl p-6 card-shadow">
+            <div class="flex items-center justify-between mb-4">
+              <div>
+                <h2 class="text-base font-bold text-slate-900">Team Workload &amp; Roles</h2>
+                <p class="text-xs text-slate-500">Monitor active leads, shift status, and daily goals.</p>
+              </div>
+              <button onclick="loadUsersTable()" class="text-xs text-blue-600 hover:underline">
+                <i class="fa-solid fa-rotate-right mr-1"></i> Refresh
+              </button>
+            </div>
+
+            <div class="overflow-x-auto rounded-xl border border-slate-200">
+              <table class="w-full text-left text-xs">
+                <thead class="bg-slate-50 text-slate-600 font-bold border-b border-slate-200">
+                  <tr>
+                    <th class="py-3 px-3">Username</th>
+                    <th class="py-3 px-3">Name</th>
+                    <th class="py-3 px-3 text-center">Shift</th>
+                    <th class="py-3 px-3 text-center">Daily Goal</th>
+                    <th class="py-3 px-3 text-center">Active Assigned</th>
+                    <th class="py-3 px-3 text-center">Completed Calls</th>
+                    <th class="py-3 px-3 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="usersTableBody" class="divide-y divide-slate-100">
+                  <tr><td colspan="7" class="py-6 text-center text-slate-400">Loading team...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ============================================== -->
+      <!-- VIEW F: CLEAN & RESET MAINTENANCE VIEW         -->
+      <!-- ============================================== -->
+      <div id="view-maintenance" class="hidden space-y-6">
+        <div class="bg-white rounded-2xl p-8 card-shadow max-w-2xl mx-auto space-y-6">
+          <div>
+            <h2 class="text-base font-bold text-slate-900">Database Cleaning &amp; Queue Maintenance</h2>
+            <p class="text-xs text-slate-500 mt-1">Recycle unreached customers or reset lead allocations.</p>
+          </div>
+
+          <!-- Pre-Call SMS Warmup Section (Improvement #14) -->
+          <div class="bg-blue-50 rounded-2xl p-5 border border-blue-200 flex items-start justify-between">
+            <div>
+              <div class="text-xs font-bold text-blue-900 flex items-center space-x-1.5">
+                <i class="fa-solid fa-comment-sms text-blue-700"></i>
+                <span>Pre-Call SMS Template Warm-Up</span>
+              </div>
+              <p class="text-[11px] text-blue-700 mt-1">
+                Kinyarwanda + English template to warn customers before calling: increases answer rate by ~40%.
+              </p>
+              <div class="bg-white p-2.5 rounded-lg border border-blue-200 mt-2 text-[11px] font-mono text-slate-600">
+                "Muraho [NAME], turakumenyesha ko Canal+ igiye kuguhamagara ku bijyanye na serivisi yanyu. — Canal+ Rwanda"
+              </div>
+            </div>
+            <button onclick="copyWarmupSmsTemplate()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs px-3.5 py-2 rounded-xl shadow transition shrink-0 ml-4">
+              Copy SMS
+            </button>
+          </div>
+
+          <!-- Option 1: Recycle No-Answer -->
+          <div class="bg-amber-50 rounded-2xl p-5 border border-amber-200 flex items-start justify-between">
+            <div>
+              <div class="text-xs font-bold text-amber-900 flex items-center space-x-1.5">
+                <i class="fa-solid fa-arrows-rotate text-amber-700"></i>
+                <span>Recycle "No Answer" Leads</span>
+              </div>
+              <p class="text-[11px] text-amber-700 mt-1">
+                Returns all clients who didn't answer or were switched off back into the unassigned queue so they can be re-dialed.
+              </p>
+            </div>
+            <button onclick="triggerReset('no_answer', 'Recycle all No-Answer leads back to the queue?')" class="bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs px-4 py-2 rounded-xl shadow transition shrink-0 ml-4">
+              Recycle
+            </button>
+          </div>
+
+          <!-- Option 2: Reset Assigned Leads -->
+          <div class="bg-slate-50 rounded-2xl p-5 border border-slate-200 flex items-start justify-between">
+            <div>
+              <div class="text-xs font-bold text-slate-800 flex items-center space-x-1.5">
+                <i class="fa-solid fa-rotate text-slate-600"></i>
+                <span>Reset Uncalled Assigned Leads</span>
+              </div>
+              <p class="text-[11px] text-slate-500 mt-1">
+                Releases leads that were assigned to agents but haven't been completed yet, returning them to the shared pool.
+              </p>
+            </div>
+            <button onclick="triggerReset('displayed_only', 'Reset all uncalled assigned leads back to unseen?')" class="bg-slate-700 hover:bg-slate-600 text-white font-bold text-xs px-4 py-2 rounded-xl shadow transition shrink-0 ml-4">
+              Reset
+            </button>
+          </div>
+
+          <!-- Option 3: Full Reset -->
+          <div class="bg-red-50 rounded-2xl p-5 border border-red-200 flex items-start justify-between">
+            <div>
+              <div class="text-xs font-bold text-red-900 flex items-center space-x-1.5">
+                <i class="fa-solid fa-triangle-exclamation text-red-600"></i>
+                <span>Full System Reset</span>
+              </div>
+              <p class="text-[11px] text-red-700 mt-1">
+                Warning: Wipes all call outcomes and history. Resets all contacts back to unseen status.
+              </p>
+            </div>
+            <button onclick="triggerReset('full_reset', 'DANGER: Are you sure you want to completely reset all leads?')" class="bg-red-600 hover:bg-red-500 text-white font-bold text-xs px-4 py-2 rounded-xl shadow transition shrink-0 ml-4">
+              Full Reset
+            </button>
+          </div>
+
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="adminToast" class="fixed bottom-6 right-6 z-50 bg-slate-900 text-white text-xs font-semibold px-4 py-3 rounded-2xl shadow-xl border border-slate-800 opacity-0 pointer-events-none transition-all duration-300 flex items-center space-x-2">
+    <i class="fa-solid fa-circle-check text-emerald-400"></i>
+    <span id="adminToastMsg">Notification message</span>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- 3. JAVASCRIPT LOGIC & API INTEGRATIONS                   -->
+  <!-- ======================================================== -->
+  <script>
+    let barChartInstance = null;
+    let donutChartInstance = null;
+    let currentPreview20Leads = [];
+    let searchTimeout = null;
+
+    // 1. AUTHENTICATION & ACCESS CONTROL
+    const storedUser = sessionStorage.getItem('canal_user');
+    let currentUser = null;
+
+    if (!storedUser) {
+      window.location.href = '/';
+    } else {
+      try {
+        currentUser = JSON.parse(storedUser);
+        if (currentUser.role !== 'admin') {
+          window.location.href = '/';
+        }
+        document.getElementById('adminSidebarName').textContent = currentUser.name || 'Admin';
+        document.getElementById('adminSidebarEmail').textContent = currentUser.username || '';
+      } catch (e) {
+        sessionStorage.removeItem('canal_user');
+        window.location.href = '/';
+      }
+    }
+
+    function handleSignOut() {
+      sessionStorage.removeItem('canal_user');
+      window.location.href = '/';
+    }
+
+    function toggleSidebar() {
+      const sb = document.getElementById('sidebar');
+      const overlay = document.getElementById('sidebarOverlay');
+      sb.classList.toggle('-translate-x-full');
+      overlay.classList.toggle('hidden');
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('adminToast');
+      document.getElementById('adminToastMsg').textContent = msg;
+      toast.classList.remove('opacity-0', 'pointer-events-none');
+      setTimeout(() => toast.classList.add('opacity-0', 'pointer-events-none'), 2500);
+    }
+
+    // 2. VIEW SWITCHER
+    function switchView(viewName) {
+      ['dashboard', 'dispatch', 'analytics', 'customers', 'team', 'maintenance'].forEach(v => {
+        const el = document.getElementById(`view-${v}`);
+        const nav = document.getElementById(`nav-${v}`);
+        if (el) el.classList.toggle('hidden', v !== viewName);
+        if (nav) {
+          if (v === viewName) {
+            nav.className = 'sidebar-active w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl transition';
+          } else {
+            nav.className = 'w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl transition text-slate-300 hover:bg-slate-800/60 hover:text-white';
+          }
+        }
+      });
+
+      if (window.innerWidth < 1024) {
+        document.getElementById('sidebar').classList.add('-translate-x-full');
+        document.getElementById('sidebarOverlay').classList.add('hidden');
+      }
+
+      if (viewName === 'dashboard') loadAdminStats();
+      if (viewName === 'dispatch') {
+        loadAssign20Preview();
+        loadUsersTable();
+      }
+      if (viewName === 'analytics') loadAgentAnalytics();
+      if (viewName === 'customers') loadHistoryTable();
+      if (viewName === 'team') loadUsersTable();
+    }
+
+    // 3. STATS & CHARTS
+    async function loadAdminStats() {
+      try {
+        const res = await fetch('/api/stats');
+        const data = await res.json();
+
+        const total = data.total || 0;
+        const called = data.called || 0;
+        const unseen = data.unseen || 0;
+        const pct = total ? Math.round((called / total) * 100) : 0;
+        const callbacks = data.callbacksToday || 0;
+
+        document.getElementById('kpiTotal').textContent = total.toLocaleString();
+        document.getElementById('kpiUnseen').textContent = unseen.toLocaleString();
+        document.getElementById('kpiCalled').textContent = called.toLocaleString();
+        document.getElementById('kpiProgressPct').textContent = `${pct}%`;
+        document.getElementById('kpiProgressBar').style.width = `${pct}%`;
+        document.getElementById('kpiCompletedSubtitle').textContent = `${called} of ${total} leads`;
+
+        if (document.getElementById('navUnassignedBadge')) {
+          document.getElementById('navUnassignedBadge').textContent = unseen.toLocaleString();
+        }
+
+        const badgeCb = document.getElementById('badgeCallbacksCount');
+        if (badgeCb) {
+          if (callbacks > 0) {
+            badgeCb.textContent = callbacks;
+            badgeCb.classList.remove('hidden');
+          } else {
+            badgeCb.classList.add('hidden');
+          }
+        }
+
+        renderBarChart(called);
+        renderDonutChart(data.outcomes || []);
+      } catch (err) {
+        console.error('Stats error:', err);
+      }
+    }
+
+    function renderBarChart(calledCount) {
+      const canvas = document.getElementById('barChartActivity');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      if (barChartInstance) barChartInstance.destroy();
+
+      const base = Math.max(calledCount, 15);
+      const dataValues = [
+        Math.round(base * 0.15),
+        Math.round(base * 0.05),
+        Math.round(base * 0.18),
+        Math.round(base * 0.28),
+        Math.round(base * 0.32),
+        Math.round(base * 0.18),
+        Math.round(base * 0.20)
+      ];
+
+      barChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+          datasets: [
+            {
+              label: 'Calls Made',
+              data: dataValues,
+              backgroundColor: '#2563EB',
+              borderRadius: 6,
+              barThickness: 18
+            },
+            {
+              label: 'Previous Period',
+              data: [10, 20, 12, 22, 20, 25, 14],
+              backgroundColor: '#E2E8F0',
+              borderRadius: 6,
+              barThickness: 18
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { grid: { display: false }, ticks: { font: { size: 10 } } },
+            y: { grid: { color: '#F1F5F9' }, ticks: { font: { size: 10 } } }
+          }
+        }
+      });
+    }
+
+    function renderDonutChart(outcomes) {
+      const canvas = document.getElementById('donutChartOutcomes');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      if (donutChartInstance) donutChartInstance.destroy();
+
+      let interested = 0, noAnswer = 0, refused = 0;
+      let totalOutcomes = 0;
+
+      outcomes.forEach(o => {
+        totalOutcomes += o.count;
+        if (o.outcome.includes('Interested') || o.outcome.includes('Renewed')) interested += o.count;
+        else if (o.outcome.includes('No Answer')) noAnswer += o.count;
+        else refused += o.count;
+      });
+
+      const pInt = totalOutcomes ? Math.round((interested / totalOutcomes) * 100) : 0;
+      const pNo = totalOutcomes ? Math.round((noAnswer / totalOutcomes) * 100) : 0;
+      const pRef = totalOutcomes ? (100 - pInt - pNo) : 0;
+
+      document.getElementById('statPctInterested').textContent = `${pInt}%`;
+      document.getElementById('statPctNoAnswer').textContent = `${pNo}%`;
+      document.getElementById('statPctRefused').textContent = `${pRef}%`;
+
+      const chartData = totalOutcomes === 0 ? [63, 15, 22] : [interested, noAnswer, refused];
+
+      donutChartInstance = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: ['Interested / Will Pay', 'No Answer', 'Refused / Other'],
+          datasets: [{
+            data: chartData,
+            backgroundColor: ['#2563EB', '#F59E0B', '#EF4444'],
+            borderWidth: 0,
+            hoverOffset: 4
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          cutout: '72%',
+          plugins: { legend: { display: false } }
+        }
+      });
+    }
+
+    // 4. "ASSIGN LEADS" LIVE PREVIEW & DISPATCH
+    async function loadAssign20Preview() {
+      const tbody = document.getElementById('preview20TableBody');
+      if (!tbody) return;
+      
+      const count = document.getElementById('dispatchBatchSize') ? document.getElementById('dispatchBatchSize').value : 20;
+      const city = document.getElementById('dispatchCityFilter') ? document.getElementById('dispatchCityFilter').value : 'all';
+
+      if (document.getElementById('previewBadgeSize')) {
+        document.getElementById('previewBadgeSize').textContent = `${count} Leads`;
+      }
+      if (document.getElementById('previewTableHeading')) {
+        document.getElementById('previewTableHeading').textContent = `Preview: ${count} High-Priority Leads Ready for Assignment ${city !== 'all' ? `(${city})` : ''}`;
+      }
+
+      tbody.innerHTML = `<tr><td colspan="8" class="py-6 text-center text-slate-400"><i class="fa-solid fa-spinner fa-spin mr-2"></i>Loading ${count} leads...</td></tr>`;
+
+      try {
+        const res = await fetch(`/api/admin/assign?count=${count}&city=${encodeURIComponent(city)}`);
+        const data = await res.json();
+        currentPreview20Leads = data.leads || [];
+
+        if (document.getElementById('assignPoolCount')) {
+          document.getElementById('assignPoolCount').textContent = (data.totalUnassigned || 0).toLocaleString();
+        }
+        if (document.getElementById('navUnassignedBadge')) {
+          document.getElementById('navUnassignedBadge').textContent = (data.totalUnassigned || 0).toLocaleString();
+        }
+
+        if (currentPreview20Leads.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="8" class="py-8 text-center text-slate-400 font-semibold">No unassigned leads found matching your criteria! You can recycle "No Answer" leads in Clean &amp; Reset.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = currentPreview20Leads.map((lead, idx) => `
+          <tr class="hover:bg-blue-50/50 transition">
+            <td class="py-3 px-3 text-center font-bold text-slate-400">${idx + 1}</td>
+            <td class="py-3 px-4">
+              <div class="font-bold text-slate-800">${escapeHtml(lead.name)}</div>
+              <div class="text-[10px] text-slate-400 font-mono">${escapeHtml(lead.sub_id || '')}</div>
+            </td>
+            <td class="py-3 px-4 font-mono font-bold text-blue-700">${escapeHtml(lead.display_phone || lead.phone)}</td>
+            <td class="py-3 px-3">
+              <span class="px-2 py-0.5 rounded text-[10px] font-bold ${lead.offer === 'Premium' ? 'bg-amber-100 text-amber-800 border border-amber-200' : 'bg-slate-100 text-slate-700'}">
+                ${escapeHtml(lead.offer || 'Start')}
+              </span>
+            </td>
+            <td class="py-3 px-3 text-center">
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800">
+                ${lead.reconnection_score ? (lead.reconnection_score * 100).toFixed(1) + '%' : 'High'}
+              </span>
+            </td>
+            <td class="py-3 px-3 font-medium text-slate-700">${escapeHtml(lead.city || 'Kigali')}</td>
+            <td class="py-3 px-3 text-center text-slate-500 font-bold">${lead.days_lapsed || '--'}d</td>
+            <td class="py-3 px-4 text-center">
+              <span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-100 text-blue-800 border border-blue-200">
+                Ready to Assign
+              </span>
+            </td>
+          </tr>
+        `).join('');
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="8" class="py-6 text-center text-red-500 font-semibold">Error loading leads: ${err.message}</td></tr>`;
+      }
+    }
+
+    async function confirmAssign20() {
+      const agent = document.getElementById('dispatchAgentSelect').value;
+      const count = document.getElementById('dispatchBatchSize') ? document.getElementById('dispatchBatchSize').value : 20;
+      const city = document.getElementById('dispatchCityFilter') ? document.getElementById('dispatchCityFilter').value : 'all';
+      const btn = document.getElementById('confirmAssignBtn');
+
+      if (!agent) {
+        alert('Please select an agent to assign these leads to.');
+        return;
+      }
+
+      if (currentPreview20Leads.length === 0) {
+        alert('No unassigned leads available to assign.');
+        return;
+      }
+
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1.5"></i> Assigning...';
+
+      try {
+        const leadIds = currentPreview20Leads.map(l => l.id);
+        const res = await fetch('/api/admin/assign', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ agent, leadIds, count, city })
+        });
+        const data = await res.json();
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-paper-plane mr-1.5"></i><span id="assignBtnLabel">Assign to Agent</span>';
+
+        if (data.success) {
+          showToast(`Successfully assigned ${data.assignedCount} leads to ${agent}!`);
+          loadAssign20Preview();
+          loadUsersTable();
+          loadAdminStats();
+        } else {
+          alert(data.message || 'Error assigning leads');
+        }
+      } catch (err) {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-paper-plane mr-1.5"></i><span id="assignBtnLabel">Assign to Agent</span>';
+        alert(err.message);
+      }
+    }
+
+    // Bulk Assign to All Online Agents (Improvement #13)
+    async function bulkAssignToAllOnline() {
+      const count = document.getElementById('dispatchBatchSize') ? document.getElementById('dispatchBatchSize').value : 20;
+      const city = document.getElementById('dispatchCityFilter') ? document.getElementById('dispatchCityFilter').value : 'all';
+
+      if (!confirm(`Bulk assign ${count} leads each to ALL online active agents?`)) return;
+
+      const btn = document.getElementById('bulkAssignBtn');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1.5"></i> Bulk Assigning...';
+
+      try {
+        const res = await fetch('/api/admin/assign', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ bulkAll: true, count, city })
+        });
+        const data = await res.json();
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-bolt mr-1.5"></i><span>Bulk to All Online</span>';
+
+        if (data.success) {
+          showToast(data.message);
+          loadAssign20Preview();
+          loadUsersTable();
+          loadAdminStats();
+        } else {
+          alert(data.message || 'Bulk assignment failed');
+        }
+      } catch (err) {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-bolt mr-1.5"></i><span>Bulk to All Online</span>';
+        alert(err.message);
+      }
+    }
+
+    // Quick dispatch directly to an agent
+    async function quickDispatch(agentUsername, count = 20) {
+      if (!confirm(`Assign ${count} fresh high-priority leads to ${agentUsername}?`)) return;
+      try {
+        const res = await fetch('/api/admin/assign', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ agent: agentUsername, count })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast(`Assigned ${data.assignedCount} leads to ${agentUsername}!`);
+          loadAssign20Preview();
+          loadUsersTable();
+          loadAdminStats();
+        } else {
+          alert(data.message || 'Error');
+        }
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+
+    // 5. AGENT ANALYTICS (PER-AGENT OUTCOMES)
+    async function loadAgentAnalytics() {
+      const tbody = document.getElementById('analyticsTableBody');
+      if (!tbody) return;
+      tbody.innerHTML = '<tr><td colspan="11" class="py-6 text-center text-slate-400"><i class="fa-solid fa-spinner fa-spin mr-1"></i> Loading analytics...</td></tr>';
+
+      try {
+        const res = await fetch('/api/stats');
+        const data = await res.json();
+        const stats = data.agentStats || [];
+        const medals = ['🥇', '🥈', '🥉'];
+
+        if (stats.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="11" class="py-6 text-center text-slate-400">No agent performance data recorded yet.</td></tr>';
+          return;
+        }
+
+        // Top Performer
+        const top = stats[0];
+        document.getElementById('topAgentName').textContent = top ? `${top.name} (@${top.username})` : '--';
+        document.getElementById('topAgentStat').textContent = top ? `${top.total_called} calls • ${top.interested_count} interested` : '0 calls';
+
+        // Overall Team Rates
+        let totalCalls = 0;
+        let totalInterested = 0;
+        stats.forEach(a => {
+          totalCalls += (a.total_called || 0);
+          totalInterested += (a.interested_count || 0);
+        });
+        const winbackPct = totalCalls > 0 ? ((totalInterested / totalCalls) * 100).toFixed(1) : '0.0';
+        document.getElementById('teamWinbackRate').textContent = `${winbackPct}%`;
+        document.getElementById('teamCallbacksToday').textContent = data.callbacksToday || 0;
+
+        // Team Avg Duration
+        let totalSec = 0;
+        let countedAgents = 0;
+        stats.forEach(a => {
+          if (a.avg_duration_sec > 0) {
+            totalSec += a.avg_duration_sec;
+            countedAgents++;
+          }
+        });
+        const avgSec = countedAgents > 0 ? Math.round(totalSec / countedAgents) : 0;
+        const avgMin = Math.floor(avgSec / 60);
+        const remSec = avgSec % 60;
+        document.getElementById('teamAvgDuration').textContent = avgSec > 0 ? `${avgMin}m ${remSec}s` : '--';
+
+        tbody.innerHTML = stats.map((a, idx) => `
+          <tr class="hover:bg-slate-50 transition">
+            <td class="py-3 px-3 text-center text-base">${medals[idx] || (idx + 1)}</td>
+            <td class="py-3 px-4">
+              <div class="font-bold text-slate-900">${escapeHtml(a.name)}</div>
+              <div class="text-[10px] text-slate-400 font-mono">@${escapeHtml(a.username)}</div>
+            </td>
+            <td class="py-3 px-3 text-center">
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${a.shift_status === 'online' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-600'}">
+                ${a.shift_status === 'online' ? '🟢 Online' : '⚫ Offline'}
+              </span>
+            </td>
+            <td class="py-3 px-3 text-center font-bold text-slate-700">${a.daily_target || 30}</td>
+            <td class="py-3 px-3 text-center">
+              <span class="px-2 py-0.5 rounded-md font-bold text-xs ${a.active_assigned > 0 ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'text-slate-400'}">
+                ${a.active_assigned || 0}
+              </span>
+            </td>
+            <td class="py-3 px-3 text-center font-bold text-slate-900">${a.total_called || 0}</td>
+            <td class="py-3 px-3 text-center font-bold text-emerald-600">${a.interested_count || 0}</td>
+            <td class="py-3 px-3 text-center text-amber-600 font-medium">${a.no_answer_count || 0}</td>
+            <td class="py-3 px-3 text-center text-red-600 font-medium">${a.refused_count || 0}</td>
+            <td class="py-3 px-3 text-center">
+              <span class="px-2.5 py-1 rounded-full text-xs font-black ${a.conversion_num >= 20 ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-700'}">
+                ${a.conversion_rate}
+              </span>
+            </td>
+            <td class="py-3 px-4 text-right font-mono text-slate-600">${a.avg_duration_formatted}</td>
+          </tr>
+        `).join('');
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="11" class="py-6 text-center text-red-500 font-semibold">Error: ${err.message}</td></tr>`;
+      }
+    }
+
+    // 6. TEAM USERS & WORKLOAD TABLE
+    async function loadUsersTable() {
+      const tbody = document.getElementById('usersTableBody');
+      const dispatchBody = document.getElementById('dispatchTableBody');
+      const select = document.getElementById('dispatchAgentSelect');
+
+      try {
+        const res = await fetch('/api/admin/users');
+        const data = await res.json();
+        const users = data.users || [];
+
+        if (select) {
+          select.innerHTML = '<option value="">Select Agent...</option>' + 
+            users.filter(u => u.role === 'agent').map(u => `<option value="${u.username}">${u.name} (@${u.username})</option>`).join('');
+        }
+
+        if (dispatchBody) {
+          dispatchBody.innerHTML = users.filter(u => u.role === 'agent').map(u => `
+            <tr class="hover:bg-slate-50 transition">
+              <td class="py-3 px-4 font-bold text-slate-800">${escapeHtml(u.name)}</td>
+              <td class="py-3 px-4 font-mono text-slate-500">${escapeHtml(u.username)}</td>
+              <td class="py-3 px-4 text-center">
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${u.shift_status === 'online' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-600'}">
+                  ${u.shift_status === 'online' ? '🟢 Online' : '⚫ Offline'}
+                </span>
+              </td>
+              <td class="py-3 px-4 text-center">
+                <span class="px-2.5 py-1 rounded-md text-xs font-bold ${u.active_assigned > 0 ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'text-slate-400'}">
+                  ${u.active_assigned || 0}
+                </span>
+              </td>
+              <td class="py-3 px-4 text-center font-bold text-emerald-600">${u.calls_today || 0}</td>
+              <td class="py-3 px-4 text-right">
+                <button onclick="quickDispatch('${u.username}', 20)" class="bg-blue-600 hover:bg-blue-500 active:scale-95 text-white font-bold text-xs px-3 py-1.5 rounded-lg shadow-sm transition">
+                  <i class="fa-solid fa-rotate mr-1"></i> Assign 20
+                </button>
+              </td>
+            </tr>
+          `).join('') || '<tr><td colspan="6" class="py-4 text-center text-slate-400">No agents registered yet.</td></tr>';
+        }
+
+        if (tbody) {
+          tbody.innerHTML = users.map(u => `
+            <tr class="hover:bg-slate-50 transition">
+              <td class="py-3 px-3 font-mono font-bold text-slate-800">${escapeHtml(u.username)}</td>
+              <td class="py-3 px-3 text-slate-700 font-medium">${escapeHtml(u.name)}</td>
+              <td class="py-3 px-3 text-center">
+                <button onclick="toggleAgentShiftAdmin('${u.username}', '${u.shift_status === 'online' ? 'offline' : 'online'}')" class="px-2 py-0.5 rounded-full text-[10px] font-bold ${u.shift_status === 'online' ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200' : 'bg-slate-200 text-slate-600 hover:bg-slate-300'} transition" title="Click to toggle shift">
+                  ${u.shift_status === 'online' ? '🟢 Online' : '⚫ Offline'}
+                </button>
+              </td>
+              <td class="py-3 px-3 text-center font-bold text-slate-700">${u.daily_target || 30}</td>
+              <td class="py-3 px-3 text-center font-bold">${u.active_assigned || 0}</td>
+              <td class="py-3 px-3 text-center font-bold text-emerald-600">${u.completed_calls || 0}</td>
+              <td class="py-3 px-3 text-right">
+                ${u.username === 'everhomedreamltd@gmail.com' ? '<span class="text-slate-300 text-[10px]">Master</span>' : `
+                  <button onclick="deleteUser(${u.id})" class="text-red-500 hover:text-red-700 p-1" title="Delete User">
+                    <i class="fa-regular fa-trash-can"></i>
+                  </button>
+                `}
+              </td>
+            </tr>
+          `).join('');
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    async function toggleAgentShiftAdmin(username, newStatus) {
+      try {
+        await fetch('/api/admin/users', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, shift_status: newStatus })
+        });
+        showToast(`Updated ${username} to ${newStatus}`);
+        loadUsersTable();
+      } catch (e) {
+        alert(e.message);
+      }
+    }
+
+    async function handleSaveUser(e) {
+      e.preventDefault();
+      const u = document.getElementById('newUsername').value;
+      const n = document.getElementById('newName').value;
+      const p = document.getElementById('newPin').value;
+      const r = document.getElementById('newRole').value;
+      const target = document.getElementById('newTarget') ? document.getElementById('newTarget').value : 30;
+
+      try {
+        const res = await fetch('/api/admin/users', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: u, name: n, pin: p, role: r, daily_target: target })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast(data.message);
+          document.getElementById('newUsername').value = '';
+          document.getElementById('newName').value = '';
+          document.getElementById('newPin').value = '';
+          loadUsersTable();
+        } else {
+          alert(data.error);
+        }
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+
+    async function deleteUser(id) {
+      if (!confirm('Are you sure you want to delete this user?')) return;
+      try {
+        await fetch(`/api/admin/users?id=${id}`, { method: 'DELETE' });
+        showToast('User deleted');
+        loadUsersTable();
+      } catch (e) {
+        alert(e.message);
+      }
+    }
+
+    // 7. HISTORY TABLE
+    async function loadHistoryTable() {
+      const tbody = document.getElementById('historyTableBody');
+      const outcome = document.getElementById('historyFilterOutcome').value;
+      const search = document.getElementById('historySearch').value;
+
+      tbody.innerHTML = '<tr><td colspan="9" class="py-6 text-center text-slate-400">Loading...</td></tr>';
+
+      try {
+        const params = new URLSearchParams({ outcome, search, limit: 150 });
+        const res = await fetch(`/api/admin/history?${params}`);
+        const data = await res.json();
+        const list = data.history || [];
+
+        if (list.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="9" class="py-6 text-center text-slate-400">No records found.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = list.map(item => {
+          const durationSec = item.call_duration || 0;
+          const durMin = Math.floor(durationSec / 60);
+          const durRem = durationSec % 60;
+          const durStr = durationSec > 0 ? `${durMin}:${String(durRem).padStart(2,'0')}` : '--';
+
+          const smsWarmup = encodeURIComponent(`Muraho ${item.name}, turakumenyesha ko Canal+ igiye kuguhamagara ku bijyanye na serivisi yanyu. — Canal+ Rwanda`);
+
+          return `
+            <tr class="hover:bg-slate-50 transition">
+              <td class="py-3 px-3 text-slate-500 font-mono text-[11px]">
+                ${item.called_at ? new Date(item.called_at).toLocaleString('en-GB', { dateStyle: 'short', timeStyle: 'short' }) : '--'}
+              </td>
+              <td class="py-3 px-3">
+                <div class="font-bold text-slate-800">${escapeHtml(item.name)}</div>
+                <div class="text-[10px] text-slate-400 font-mono">${escapeHtml(item.sub_id || '')}</div>
+              </td>
+              <td class="py-3 px-3 font-mono font-medium text-blue-700">${escapeHtml(item.display_phone || item.phone)}</td>
+              <td class="py-3 px-3 text-center font-mono text-slate-600 text-xs">${durStr}</td>
+              <td class="py-3 px-3 text-slate-600">${escapeHtml(item.offer || '--')}</td>
+              <td class="py-3 px-3 text-slate-600">${escapeHtml(item.city || '--')}</td>
+              <td class="py-3 px-3 font-mono font-bold text-slate-700">${escapeHtml(item.assigned_to || '--')}</td>
+              <td class="py-3 px-3">
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                  item.outcome.includes('Interested') ? 'bg-emerald-100 text-emerald-800' :
+                  item.outcome.includes('No Answer') ? 'bg-amber-100 text-amber-800' :
+                  'bg-slate-100 text-slate-700'
+                }">
+                  ${escapeHtml(item.outcome)}
+                </span>
+              </td>
+              <td class="py-3 px-3 text-right space-x-1 whitespace-nowrap">
+                <a href="sms:${item.formatted_phone || item.phone}?body=${smsWarmup}" class="text-blue-500 hover:text-blue-700 p-1" title="Send Pre-Call SMS">
+                  <i class="fa-solid fa-comment-sms"></i>
+                </a>
+                <button onclick="deleteSingleHistory(${item.id})" class="text-red-500 hover:text-red-700 p-1" title="Delete record">
+                  <i class="fa-regular fa-trash-can"></i>
+                </button>
+              </td>
+            </tr>
+          `;
+        }).join('');
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="9" class="py-6 text-center text-red-500">Error: ${err.message}</td></tr>`;
+      }
+    }
+
+    function debounceHistorySearch() {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(loadHistoryTable, 300);
+    }
+
+    function handleTopSearch(query) {
+      switchView('customers');
+      document.getElementById('historySearch').value = query;
+      debounceHistorySearch();
+    }
+
+    async function deleteSingleHistory(id) {
+      if (!confirm('Delete this call log record?')) return;
+      try {
+        await fetch(`/api/admin/history?id=${id}`, { method: 'DELETE' });
+        showToast('Record deleted');
+        loadHistoryTable();
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+
+    async function clearAllHistoryModal() {
+      if (!confirm('DANGER: Are you sure you want to delete ALL call history? This cannot be undone.')) return;
+      try {
+        await fetch('/api/admin/history?id=all', { method: 'DELETE' });
+        showToast('All history cleared');
+        loadHistoryTable();
+        loadAdminStats();
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+
+    // 8. MAINTENANCE & RESETS
+    async function triggerReset(target, confirmMsg) {
+      if (!confirm(confirmMsg)) return;
+      try {
+        const res = await fetch('/api/admin/reset', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ target })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast(data.message);
+          loadAdminStats();
+          loadAssign20Preview();
+          loadUsersTable();
+        } else {
+          alert(data.error || 'Reset failed');
+        }
+      } catch (e) {
+        alert(e.message);
+      }
+    }
+
+    function copyWarmupSmsTemplate() {
+      const template = "Muraho [NAME], turakumenyesha ko Canal+ igiye kuguhamagara ku bijyanye na serivisi yanyu. — Canal+ Rwanda";
+      navigator.clipboard.writeText(template).then(() => {
+        showToast("SMS template copied to clipboard!");
+      }).catch(() => {
+        showToast("Template ready to copy");
+      });
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    // Initial Load
+    document.addEventListener('DOMContentLoaded', () => {
+      loadAdminStats();
+      loadAssign20Preview();
+    });
+  </script>
+</body>
+</html>

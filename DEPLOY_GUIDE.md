@@ -1,105 +1,94 @@
-# Cloudflare Calling App: Deployment Guide
-=============================================
+# Canal+ Rwanda Calling App: Deployment & Migration Guide
+=============================================================
 
 This app runs on **Cloudflare Pages + Cloudflare D1 (Serverless Database)**.
-It is **100% free**, secure (HTTPS), and accessible from your mobile phone anywhere in Rwanda on 4G/5G or Wi-Fi.
+It features a dedicated **Admin Dashboard** and a **Mobile-First Agent Calling Workspace** with:
+- ⏱ Call Timer & average call duration tracking
+- ⏰ Callback scheduler with reminder alerts
+- 💬 1-tap bilingual WhatsApp win-back templates
+- 📝 Required payment notes for "Interested" leads
+- 🟢 Online/Offline Agent Shift Status toggle
+- 🏆 Agent Performance Leaderboard with gamified rankings
+- 📦 Smart batch dispatching (10, 20, 30, 50 leads) with live 20-lead preview
+- 📍 City & Region filtering (Kigali, Rubavu)
+- 🔥 Hot Lead auto-prioritization (Score $\ge 0.95$ & Lapsed $\le 45$ days)
+- 📊 Daily Call Target progress bar
+- 📈 Per-agent conversion rate & duration analytics table
+- ⚡ Bulk Assign to all online agents in 1 click
+- 💬 Pre-call warm-up SMS integration
+- 📱 Offline PWA support with service worker
 
 ---
 
-## Prerequisites (Takes 2 minutes)
-1. A free Cloudflare account: [dash.cloudflare.com/sign-up](https://dash.cloudflare.com/sign-up)
-2. Node.js installed on your PC (to run `npx wrangler`). If you don't have it, download from [nodejs.org](https://nodejs.org/).
+## 🔑 Official Login Credentials
+
+| Role | Username / Email | Password / PIN | Destination |
+| :--- | :--- | :--- | :--- |
+| **Administrator** | `everhomedreamltd@gmail.com` | `fau@123` | `/admin.html` (Full Admin Dashboard) |
+| **Agent** | `agent1` | `caddet@123` | `/` (Agent Calling Screen) |
 
 ---
 
-## Step 1: Open Terminal in this Folder
-Open PowerShell or Command Prompt, and navigate to this folder:
+## 🚀 Step 1: Deploy Latest Code via GitHub
+Run the following in PowerShell / Command Prompt:
 ```powershell
 cd c:\Users\user\Downloads\canal\cloudflare-calling-app
+git add .
+git commit -m "Implement all 15 workflow improvements: callbacks, timers, leaderboard, PWA, analytics, hot leads, city filter, bulk assign, shift status, daily target"
+git push origin main
 ```
+*Cloudflare Pages will automatically detect the push and deploy within 45 seconds.*
 
 ---
 
-## Step 2: Log into Cloudflare from Terminal
+## 🗄 Step 2: Database Setup / Schema Update on Cloudflare D1
+
+### Option A: Clean Quick Setup (Recommended if starting fresh or testing)
+1. Go to [Cloudflare Dashboard](https://dash.cloudflare.com/) $\rightarrow$ **Workers & Pages** $\rightarrow$ **D1 SQL Database** $\rightarrow$ Select `canal-calling-db`.
+2. Click the **Console** tab.
+3. Open and copy all contents from `setup_quick.sql` and paste into the Console, then click **Execute**.
+   - Creates `contacts` with `callback_at`, `call_duration`, `assigned_to`
+   - Creates `users` with `shift_status`, `daily_target`
+   - Sets up both Admin & Agent accounts
+   - Populates 30 high-priority leads ready for dispatch.
+
+*Or via terminal:*
 ```bash
-npx wrangler login
-```
-*A browser window will open. Click **Allow** to authorize Wrangler.*
-
----
-
-## Step 3: Create Your Cloudflare D1 Database
-Run:
-```bash
-npx wrangler d1 create canal-calling-db
-```
-Wrangler will output something like this:
-```text
-[[d1_databases]]
-binding = "DB"
-database_name = "canal-calling-db"
-database_id = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-```
-
-**Copy that `database_id`** and paste it into [wrangler.toml](file:///c:/Users/user/Downloads/canal/cloudflare-calling-app/wrangler.toml):
-```toml
-database_id = "paste-your-database-id-here"
+npx wrangler d1 execute canal-calling-db --file=./setup_quick.sql --remote
 ```
 
 ---
 
-## Step 4: Initialize the Database Schema & Seed Data
+### Option B: Upgrade Existing Database (Preserves existing records)
+If you already ran migrations earlier and just need the new columns:
+1. Go to [Cloudflare Dashboard](https://dash.cloudflare.com/) $\rightarrow$ **D1 SQL Database** $\rightarrow$ Select `canal-calling-db` $\rightarrow$ **Console**.
+2. Run the statements in `schema_update.sql`:
+```sql
+ALTER TABLE contacts ADD COLUMN assigned_to TEXT;
+ALTER TABLE contacts ADD COLUMN callback_at TIMESTAMP;
+ALTER TABLE contacts ADD COLUMN call_duration INTEGER DEFAULT 0;
+ALTER TABLE users ADD COLUMN shift_status TEXT DEFAULT 'offline';
+ALTER TABLE users ADD COLUMN daily_target INTEGER DEFAULT 30;
 
-1. **Create the table**:
-```bash
-npx wrangler d1 execute canal-calling-db --file=./schema.sql --remote
-```
-
-2. **Load Tier 1 Priority Leads (4,633 accounts - Recommended for fast start)**:
-```bash
-npx wrangler d1 execute canal-calling-db --file=./seed_tier1.sql --remote
-```
-*(Optional: If you want all 45,699 leads at once, run with `--file=./seed_all.sql` instead).*
-
----
-
-## Step 5: Deploy the Mobile Web App to Cloudflare Pages
-Run:
-```bash
-npx wrangler pages deploy ./public --project-name=canal-calling
-```
-
-Wrangler will upload your app and print your live link:
-```text
-✨ Success! Uploaded files
-✨ Deployment complete! Take a peek over at https://canal-calling.pages.dev
+CREATE INDEX IF NOT EXISTS idx_contacts_assigned ON contacts(assigned_to);
+CREATE INDEX IF NOT EXISTS idx_contacts_callback ON contacts(callback_at);
+CREATE INDEX IF NOT EXISTS idx_contacts_city ON contacts(city);
 ```
 
 ---
 
-## Step 6: Link Database in Cloudflare Dashboard (One-Time Link)
-1. Go to your [Cloudflare Dashboard](https://dash.cloudflare.com/).
-2. Click **Workers & Pages** $\rightarrow$ Click your project **`canal-calling`**.
-3. Go to **Settings** $\rightarrow$ **Functions** (or **Bindings**).
-4. Scroll to **D1 Database Bindings** $\rightarrow$ Click **Add binding**.
-   * **Variable name**: `DB`
-   * **D1 database**: Select `canal-calling-db`
-5. Click **Save and Deploy**.
+## 📱 Step 3: Verifying the Setup
 
----
+1. **Admin Experience**:
+   - Go to your live URL (or `/admin.html`).
+   - Sign in as `everhomedreamltd@gmail.com` / `fau@123`.
+   - Click **"Assign Leads"** in the sidebar.
+   - You will see the live preview of leads, city filter, and the **"Assign to Agent"** and **"Bulk to All Online"** buttons.
+   - Click **"Agent Analytics"** to inspect conversion rates and call durations.
 
-## Step 7: Open on Your Mobile Phone! 📱
-
-1. On your phone, open Chrome or Safari and go to your live link:
-   ```
-   https://canal-calling.pages.dev
-   ```
-2. **Add to Home Screen (Optional but Recommended)**:
-   * **iPhone (Safari)**: Tap the Share button $\rightarrow$ Tap **"Add to Home Screen"**.
-   * **Android (Chrome)**: Tap the 3 dots menu $\rightarrow$ Tap **"Add to Home screen"** / **"Install app"**.
-3. The app will open full screen like a native mobile app!
-   * Tap **Copy** $\rightarrow$ Copies phone number instantly.
-   * Tap **Call** $\rightarrow$ Opens your mobile phone dialer.
-   * Tap an outcome $\rightarrow$ Card disappears and saves to Cloudflare D1.
-   * Tap **"Next 20"** $\rightarrow$ Fetches 20 fresh unseen numbers.
-
+2. **Agent Experience**:
+   - Go to the live URL `/` on mobile or desktop.
+   - Sign in as `agent1` / `caddet@123`.
+   - Tap **"Online"** to start the shift.
+   - Call leads, track the live timer, use the bilingual WhatsApp template, and schedule callbacks.
+   - Watch the daily goal progress bar update in real-time.

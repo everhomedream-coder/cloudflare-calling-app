@@ -6,160 +6,398 @@
   <meta name="theme-color" content="#1e3a8a">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <title>Canal+ Rwanda Calling Workspace</title>
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" type="image/jpeg" href="/logo.jpg">
+  <link rel="apple-touch-icon" href="/logo.jpg">
+  <title>Canal+ Rwanda Telesales</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
     body { -webkit-tap-highlight-color: transparent; }
     .card-fade-out {
       transition: all 0.35s ease-out;
-      opacity: 0;
-      transform: translateY(-15px) scale(0.96);
-      max-height: 0;
-      margin-top: 0;
-      margin-bottom: 0;
-      padding-top: 0;
-      padding-bottom: 0;
-      overflow: hidden;
+      opacity: 0; transform: translateY(-15px) scale(0.96);
+      max-height: 0; margin: 0; padding-top: 0; padding-bottom: 0; overflow: hidden;
     }
+    .hot-lead-card { border-color: #F97316 !important; background: linear-gradient(135deg, #fff7ed 0%, #ffffff 100%); }
+    .shift-online { background: #059669 !important; }
+    .shift-offline { background: #6B7280 !important; }
+    .timer-active { color: #EF4444; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .callback-banner { background: linear-gradient(135deg, #1e40af, #1d4ed8); }
   </style>
 </head>
-<body class="bg-slate-100 text-slate-800 font-sans min-h-screen pb-20">
+<body class="bg-slate-100 text-slate-800 font-sans min-h-screen">
 
-  <!-- Fixed Top Header -->
-  <header class="sticky top-0 z-30 bg-blue-900 text-white shadow-md">
-    <div class="max-w-xl mx-auto px-4 py-3 flex items-center justify-between">
-      <div class="flex items-center space-x-2">
-        <div class="w-8 h-8 rounded-lg bg-red-600 flex items-center justify-center font-bold text-white shadow">
-          C+
+  <!-- ==================== SIGN IN SCREEN ==================== -->
+  <div id="authScreen" class="min-h-screen flex items-center justify-center p-4 bg-gradient-to-b from-blue-950 via-slate-900 to-slate-950">
+    <div class="bg-white rounded-3xl p-7 sm:p-9 max-w-sm w-full shadow-2xl border border-slate-200">
+      <div class="text-center mb-6">
+        <img src="/logo.jpg" alt="Logo" class="w-16 h-16 rounded-2xl mx-auto mb-3 shadow-lg object-cover">
+        <h1 class="text-xl font-bold text-slate-900 tracking-tight">Canal+ Rwanda</h1>
+        <p class="text-xs text-slate-500 mt-1">Subscriber Telesales &amp; Win-Back Portal</p>
+      </div>
+      <form onsubmit="handleSignIn(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Username / Email</label>
+          <input type="text" id="authUsername" required placeholder="Enter username or email" autocomplete="username"
+            class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-blue-900 focus:outline-none">
         </div>
         <div>
-          <h1 class="text-base font-bold leading-tight">Canal+ Telesales</h1>
-          <p class="text-xs text-blue-200" id="headerSubtitle">Loading leads...</p>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Password / PIN</label>
+          <input type="password" id="authPin" required placeholder="Enter password" autocomplete="current-password"
+            class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-blue-900 focus:outline-none">
+        </div>
+        <div id="authError" class="hidden text-xs text-red-600 bg-red-50 p-2.5 rounded-xl border border-red-200 font-medium"></div>
+        <button type="submit" id="authSubmitBtn" class="w-full bg-blue-900 hover:bg-blue-800 active:scale-95 text-white font-bold py-3 rounded-xl text-sm shadow-md transition flex items-center justify-center space-x-1.5">
+          <span>Sign In</span>
+          <i class="fa-solid fa-arrow-right text-xs"></i>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==================== AGENT CALLING WORKSPACE ==================== -->
+  <div id="callingApp" class="hidden pb-20">
+
+    <!-- Fixed Top Header -->
+    <header class="sticky top-0 z-30 bg-blue-900 text-white shadow-md">
+      <div class="max-w-xl mx-auto px-4 py-3 flex items-center justify-between">
+        <div class="flex items-center space-x-2">
+          <img src="/logo.jpg" alt="Logo" class="w-8 h-8 rounded-lg shadow object-cover">
+          <div>
+            <h1 class="text-sm font-bold leading-tight" id="agentGreeting">Agent Workspace</h1>
+            <p class="text-[11px] text-blue-200" id="headerSubtitle">Loading assigned leads...</p>
+          </div>
+        </div>
+        <div class="flex items-center space-x-2">
+          <!-- Shift Toggle Button -->
+          <button id="shiftBtn" onclick="toggleShift()" class="shift-offline text-white text-[10px] font-extrabold uppercase px-2.5 py-1.5 rounded-lg transition active:scale-95 flex items-center space-x-1">
+            <span class="w-1.5 h-1.5 rounded-full bg-white/70" id="shiftDot"></span>
+            <span id="shiftLabel">Offline</span>
+          </button>
+          <button onclick="loadAssignedLeads()" class="bg-blue-800 hover:bg-blue-700 text-white text-xs font-semibold px-2.5 py-2 rounded-lg flex items-center space-x-1 shadow transition" title="Refresh">
+            <i class="fa-solid fa-rotate-right"></i>
+          </button>
+          <button onclick="handleSignOut()" class="bg-red-700 hover:bg-red-600 text-white text-xs font-semibold px-2.5 py-2 rounded-lg transition" title="Sign Out">
+            <i class="fa-solid fa-arrow-right-from-bracket"></i>
+          </button>
         </div>
       </div>
-      <button onclick="loadNewBatch()" class="bg-blue-700 hover:bg-blue-600 active:scale-95 text-white text-xs font-semibold px-3 py-2 rounded-lg flex items-center space-x-1.5 shadow transition">
-        <i class="fa-solid fa-rotate-right"></i>
-        <span>Next 20</span>
-      </button>
-    </div>
 
-    <!-- Live Stats Bar -->
-    <div class="bg-blue-950 px-4 py-2 border-t border-blue-800">
-      <div class="max-w-xl mx-auto flex items-center justify-between text-xs">
-        <span class="text-slate-300">
-          Unseen: <strong id="statUnseen" class="text-white font-bold">--</strong>
-        </span>
-        <span class="text-slate-300">
-          Called: <strong id="statCalled" class="text-green-400 font-bold">--</strong>
-        </span>
-        <span class="text-slate-300">
-          Batch: <strong id="batchProgress" class="text-yellow-400 font-bold">0 / 20</strong>
-        </span>
-      </div>
-    </div>
-
-    <!-- Navigation Tabs -->
-    <div class="max-w-xl mx-auto flex border-t border-blue-800 text-xs font-medium">
-      <button onclick="switchTab('queue')" id="tabQueue" class="flex-1 py-2.5 text-center text-white border-b-2 border-yellow-400 font-bold flex items-center justify-center space-x-1">
-        <i class="fa-solid fa-phone"></i>
-        <span>Today's Queue</span>
-      </button>
-      <button onclick="switchTab('history')" id="tabHistory" class="flex-1 py-2.5 text-center text-blue-300 hover:text-white border-b-2 border-transparent flex items-center justify-center space-x-1">
-        <i class="fa-solid fa-clock-rotate-left"></i>
-        <span>Call History</span>
-      </button>
-    </div>
-  </header>
-
-  <!-- Main Container -->
-  <main class="max-w-xl mx-auto px-3.5 pt-3">
-
-    <!-- Toast Notification -->
-    <div id="toast" class="fixed top-16 left-1/2 -translate-x-1/2 z-50 bg-emerald-600 text-white text-xs font-bold px-4 py-2 rounded-full shadow-lg transition-all duration-300 opacity-0 pointer-events-none flex items-center space-x-1.5">
-      <i class="fa-solid fa-check-circle"></i>
-      <span id="toastMsg">Copied!</span>
-    </div>
-
-    <!-- VIEW 1: QUEUE VIEW -->
-    <section id="queueView">
-      <div id="loadingIndicator" class="text-center py-12 text-slate-500">
-        <i class="fa-solid fa-spinner fa-spin text-3xl text-blue-800 mb-2"></i>
-        <p class="text-xs">Loading fresh unseen contacts...</p>
-      </div>
-
-      <div id="emptyQueue" class="hidden text-center py-12 px-4 bg-white rounded-2xl shadow-sm border border-slate-200 mt-2">
-        <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-3 text-2xl">
-          <i class="fa-solid fa-circle-check"></i>
+      <!-- Stats Bar -->
+      <div class="bg-blue-950 px-4 py-2 border-t border-blue-800">
+        <div class="max-w-xl mx-auto space-y-1.5">
+          <div class="flex items-center justify-between text-xs">
+            <span class="text-slate-300">Assigned: <strong id="statAssignedTotal" class="text-white">0</strong></span>
+            <span class="text-slate-300">Done: <strong id="statCompleted" class="text-green-400">0</strong></span>
+            <span class="text-slate-300">Remaining: <strong id="statRemaining" class="text-yellow-400">0</strong></span>
+            <span class="text-slate-300">🔥 Interested: <strong id="statInterested" class="text-emerald-400">0</strong></span>
+          </div>
+          <!-- Daily Target Progress Bar -->
+          <div class="flex items-center space-x-2">
+            <span class="text-[10px] text-blue-300 whitespace-nowrap">Daily target:</span>
+            <div class="flex-1 bg-blue-800 rounded-full h-1.5 overflow-hidden">
+              <div id="dailyProgressBar" class="bg-emerald-400 h-1.5 rounded-full transition-all duration-500" style="width:0%"></div>
+            </div>
+            <span class="text-[10px] text-white font-bold whitespace-nowrap" id="dailyProgressText">0/30</span>
+          </div>
         </div>
-        <h3 class="text-lg font-bold text-slate-800">Batch Completed!</h3>
-        <p class="text-xs text-slate-500 mt-1 mb-4">All contacts in this batch have been processed.</p>
-        <button onclick="loadNewBatch()" class="bg-blue-800 hover:bg-blue-700 active:scale-95 text-white font-semibold text-sm px-5 py-2.5 rounded-xl shadow-md transition flex items-center space-x-2 mx-auto">
-          <i class="fa-solid fa-arrow-right"></i>
-          <span>Load Next 20 Fresh Contacts</span>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <div class="max-w-xl mx-auto flex border-t border-blue-800 text-xs font-medium">
+        <button onclick="switchTab('queue')" id="tabQueue" class="flex-1 py-2.5 text-center text-white border-b-2 border-yellow-400 font-bold flex items-center justify-center space-x-1">
+          <i class="fa-solid fa-phone"></i><span>My Queue</span>
+        </button>
+        <button onclick="switchTab('callbacks')" id="tabCallbacks" class="flex-1 py-2.5 text-center text-blue-300 hover:text-white border-b-2 border-transparent flex items-center justify-center space-x-1">
+          <i class="fa-solid fa-clock-rotate-left"></i>
+          <span>Callbacks</span>
+          <span id="callbackBadge" class="hidden bg-red-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full ml-1">0</span>
+        </button>
+        <button onclick="switchTab('leaderboard')" id="tabLeaderboard" class="flex-1 py-2.5 text-center text-blue-300 hover:text-white border-b-2 border-transparent flex items-center justify-center space-x-1">
+          <i class="fa-solid fa-trophy"></i><span>Ranking</span>
+        </button>
+        <button onclick="switchTab('history')" id="tabHistory" class="flex-1 py-2.5 text-center text-blue-300 hover:text-white border-b-2 border-transparent flex items-center justify-center space-x-1">
+          <i class="fa-solid fa-list"></i><span>History</span>
         </button>
       </div>
+    </header>
 
-      <!-- Contact Cards Container -->
-      <div id="cardsContainer" class="space-y-3.5"></div>
-    </section>
+    <main class="max-w-xl mx-auto px-3.5 pt-3">
+      <!-- Toast -->
+      <div id="toast" class="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-emerald-600 text-white text-xs font-bold px-4 py-2 rounded-full shadow-lg transition-all duration-300 opacity-0 pointer-events-none flex items-center space-x-1.5">
+        <i class="fa-solid fa-check-circle"></i>
+        <span id="toastMsg">Done!</span>
+      </div>
 
-    <!-- VIEW 2: HISTORY VIEW -->
-    <section id="historyView" class="hidden">
-      <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-200 mb-3">
-        <h2 class="text-sm font-bold text-slate-800 mb-1 flex items-center justify-between">
-          <span>Recent Call Outcomes</span>
-          <button onclick="loadHistory()" class="text-xs text-blue-700 hover:underline">
-            <i class="fa-solid fa-rotate-right"></i> Refresh
+      <!-- OUTCOME MODAL (for Interested — notes required) -->
+      <div id="outcomeModal" class="hidden fixed inset-0 bg-slate-900/70 z-50 flex items-end sm:items-center justify-center p-4">
+        <div class="bg-white rounded-3xl w-full max-w-sm shadow-2xl p-6">
+          <div class="flex items-center space-x-2 mb-4">
+            <div class="w-9 h-9 bg-emerald-100 text-emerald-700 rounded-xl flex items-center justify-center">
+              <i class="fa-solid fa-circle-check text-lg"></i>
+            </div>
+            <div>
+              <div class="text-sm font-black text-slate-900" id="modalTitle">Interested — Will Pay</div>
+              <div class="text-[11px] text-slate-500" id="modalSubtitle">Add payment details before saving</div>
+            </div>
+          </div>
+
+          <!-- Callback date/time (shown when outcome is Callback) -->
+          <div id="callbackFields" class="hidden mb-3 space-y-2">
+            <label class="text-xs font-bold text-slate-700">Schedule Callback Date &amp; Time</label>
+            <input type="datetime-local" id="callbackDatetime"
+              class="w-full px-3.5 py-2.5 rounded-xl border border-blue-300 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none font-mono">
+          </div>
+
+          <div class="mb-4">
+            <label class="text-xs font-bold text-slate-700 mb-1 block" id="notesLabel">Payment method &amp; expected date <span class="text-red-500">*</span></label>
+            <textarea id="outcomeNotes" rows="3" placeholder="e.g. MoMo payment — will pay on Saturday..."
+              class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none resize-none"></textarea>
+            <div id="notesError" class="hidden text-xs text-red-500 mt-1">Notes are required for this outcome.</div>
+          </div>
+
+          <div class="flex space-x-3">
+            <button onclick="closeModal()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2.5 rounded-xl text-sm transition">Cancel</button>
+            <button onclick="confirmOutcome()" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 rounded-xl text-sm shadow transition" id="confirmOutcomeBtn">Save Outcome</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ====== VIEW: QUEUE ====== -->
+      <section id="queueView">
+        <div id="loadingIndicator" class="text-center py-12 text-slate-500">
+          <i class="fa-solid fa-spinner fa-spin text-3xl text-blue-800 mb-2"></i>
+          <p class="text-xs">Checking your assigned batch...</p>
+        </div>
+        <div id="emptyQueue" class="hidden text-center py-12 px-6 bg-white rounded-3xl shadow-sm border border-slate-200 mt-2">
+          <div class="w-16 h-16 bg-blue-100 text-blue-700 rounded-2xl flex items-center justify-center mx-auto mb-3 text-2xl shadow-inner">
+            <i class="fa-solid fa-clipboard-check"></i>
+          </div>
+          <h3 class="text-lg font-bold text-slate-800">All Assigned Leads Completed!</h3>
+          <p class="text-xs text-slate-500 mt-1 mb-5 leading-relaxed">Your administrator will assign your next batch of leads.<br>Tap below to check if new leads have been assigned to you.</p>
+          <button onclick="loadAssignedLeads()" class="bg-blue-900 hover:bg-blue-800 active:scale-95 text-white font-semibold text-xs px-5 py-2.5 rounded-xl shadow-md transition flex items-center space-x-2 mx-auto">
+            <i class="fa-solid fa-rotate-right"></i>
+            <span>Check for New Assigned Leads</span>
           </button>
-        </h2>
-        <p class="text-xs text-slate-500">Last 50 calls logged by you</p>
-      </div>
-      <div id="historyList" class="space-y-2.5">
-        <div class="text-center py-8 text-slate-400 text-xs">Loading history...</div>
-      </div>
-    </section>
+        </div>
+        <div id="cardsContainer" class="space-y-3.5"></div>
+      </section>
 
-  </main>
+      <!-- ====== VIEW: CALLBACKS ====== -->
+      <section id="callbacksView" class="hidden">
+        <div class="callback-banner rounded-2xl p-4 text-white mb-4 shadow-lg">
+          <div class="flex items-center space-x-2 mb-1">
+            <i class="fa-solid fa-clock text-yellow-300 text-lg"></i>
+            <h2 class="font-black text-base">Scheduled Callbacks</h2>
+          </div>
+          <p class="text-[11px] text-blue-200">Customers who asked you to call back. Call them now!</p>
+        </div>
+        <div id="callbacksList" class="space-y-3">
+          <div class="text-center py-6 text-slate-400 text-xs">Loading callbacks...</div>
+        </div>
+      </section>
+
+      <!-- ====== VIEW: LEADERBOARD ====== -->
+      <section id="leaderboardView" class="hidden">
+        <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 mb-4">
+          <div class="flex items-center justify-between mb-3">
+            <h2 class="font-black text-slate-900">Today's Performance</h2>
+            <button onclick="loadLeaderboard()" class="text-xs text-blue-600 hover:underline"><i class="fa-solid fa-rotate-right mr-1"></i>Refresh</button>
+          </div>
+          <div id="leaderboardList" class="space-y-2">
+            <div class="text-center py-4 text-slate-400 text-xs">Loading ranking...</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ====== VIEW: HISTORY ====== -->
+      <section id="historyView" class="hidden">
+        <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-200 mb-3">
+          <h2 class="text-sm font-bold text-slate-800 mb-1 flex items-center justify-between">
+            <span>My Logged Calls</span>
+            <button onclick="loadHistory()" class="text-xs text-blue-700 hover:underline"><i class="fa-solid fa-rotate-right"></i> Refresh</button>
+          </h2>
+          <p class="text-xs text-slate-500">Your recent call outcomes</p>
+        </div>
+        <div id="historyList" class="space-y-2.5">
+          <div class="text-center py-8 text-slate-400 text-xs">Loading history...</div>
+        </div>
+      </section>
+    </main>
+  </div>
 
   <script>
     let activeBatch = [];
-    let completedInBatch = 0;
+    let completedCount = 0;
+    let callsTodayCount = 0;
+    let interestedCount = 0;
+    let currentUser = null;
+    let currentCallbacks = [];
+    let timerInterval = null;
+    let timerSeconds = 0;
+    let activeTimerCardId = null;
+    let pendingOutcome = null; // { id, outcome, name }
+    let shiftStatus = 'offline';
+    let dailyTarget = 30;
 
-    // Toast Alert
-    function showToast(msg) {
+    // ===== HTML ESCAPE =====
+    function esc(str) {
+      if (!str) return '';
+      return String(str).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+    }
+
+    // ===== AUTH =====
+    async function handleSignIn(e) {
+      e.preventDefault();
+      const u = document.getElementById('authUsername').value.trim();
+      const p = document.getElementById('authPin').value.trim();
+      const errBox = document.getElementById('authError');
+      const btn = document.getElementById('authSubmitBtn');
+
+      errBox.classList.add('hidden');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Signing In...';
+
+      try {
+        const res = await fetch('/api/auth', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: u, pin: p })
+        });
+        const data = await res.json();
+
+        if (!data.success) {
+          errBox.textContent = data.error || 'Invalid username or password';
+          errBox.classList.remove('hidden');
+          btn.disabled = false;
+          btn.innerHTML = '<span>Sign In</span><i class="fa-solid fa-arrow-right text-xs"></i>';
+          return;
+        }
+
+        currentUser = data.user;
+        sessionStorage.setItem('canal_user', JSON.stringify(currentUser));
+        if (currentUser.role === 'admin') {
+          window.location.href = '/admin.html';
+        } else {
+          startAgentWorkspace();
+        }
+      } catch (err) {
+        errBox.textContent = `Connection error: ${err.message}`;
+        errBox.classList.remove('hidden');
+        btn.disabled = false;
+        btn.innerHTML = '<span>Sign In</span><i class="fa-solid fa-arrow-right text-xs"></i>';
+      }
+    }
+
+    function handleSignOut() {
+      // Go offline when signing out
+      if (currentUser) {
+        fetch('/api/admin/users', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: currentUser.username, shift_status: 'offline' })
+        }).catch(() => {});
+      }
+      sessionStorage.removeItem('canal_user');
+      currentUser = null;
+      document.getElementById('callingApp').classList.add('hidden');
+      document.getElementById('authScreen').classList.remove('hidden');
+      document.getElementById('authPin').value = '';
+    }
+
+    function startAgentWorkspace() {
+      document.getElementById('authScreen').classList.add('hidden');
+      document.getElementById('callingApp').classList.remove('hidden');
+      document.getElementById('agentGreeting').textContent = `${currentUser.name}`;
+      loadAssignedLeads();
+    }
+
+    // ===== SHIFT TOGGLE =====
+    async function toggleShift() {
+      const newStatus = shiftStatus === 'online' ? 'offline' : 'online';
+      try {
+        await fetch('/api/admin/users', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: currentUser.username, shift_status: newStatus })
+        });
+        shiftStatus = newStatus;
+        updateShiftUI();
+        showToast(newStatus === 'online' ? '🟢 Shift started — you are now Online!' : '🔴 Shift ended — marked Offline');
+      } catch (err) {
+        showToast('Could not update shift status');
+      }
+    }
+
+    function updateShiftUI() {
+      const btn = document.getElementById('shiftBtn');
+      const label = document.getElementById('shiftLabel');
+      if (shiftStatus === 'online') {
+        btn.className = 'shift-online text-white text-[10px] font-extrabold uppercase px-2.5 py-1.5 rounded-lg transition active:scale-95 flex items-center space-x-1';
+        label.textContent = 'Online';
+      } else {
+        btn.className = 'shift-offline text-white text-[10px] font-extrabold uppercase px-2.5 py-1.5 rounded-lg transition active:scale-95 flex items-center space-x-1';
+        label.textContent = 'Offline';
+      }
+    }
+
+    // ===== CALL TIMER =====
+    function startTimer(cardId) {
+      if (timerInterval) clearInterval(timerInterval);
+      timerSeconds = 0;
+      activeTimerCardId = cardId;
+      const el = document.getElementById(`timer-${cardId}`);
+      if (el) el.classList.remove('hidden');
+
+      timerInterval = setInterval(() => {
+        timerSeconds++;
+        const m = Math.floor(timerSeconds / 60);
+        const s = timerSeconds % 60;
+        const formatted = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+        const timerEl = document.getElementById(`timer-${cardId}`);
+        if (timerEl) timerEl.textContent = `⏱ ${formatted}`;
+      }, 1000);
+    }
+
+    function stopTimer() {
+      if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+      const duration = timerSeconds;
+      timerSeconds = 0;
+      activeTimerCardId = null;
+      return duration;
+    }
+
+    // ===== TOAST =====
+    function showToast(msg, color = 'bg-emerald-600') {
       const toast = document.getElementById('toast');
       document.getElementById('toastMsg').textContent = msg;
-      toast.classList.remove('opacity-0', 'pointer-events-none');
-      setTimeout(() => {
-        toast.classList.add('opacity-0', 'pointer-events-none');
-      }, 1800);
+      toast.className = `fixed top-4 left-1/2 -translate-x-1/2 z-50 ${color} text-white text-xs font-bold px-4 py-2 rounded-full shadow-lg transition-all duration-300 flex items-center space-x-1.5`;
+      toast.style.opacity = '1';
+      toast.style.pointerEvents = 'auto';
+      setTimeout(() => { toast.style.opacity = '0'; toast.style.pointerEvents = 'none'; }, 2200);
     }
 
-    // Tab Switcher
+    // ===== TABS =====
     function switchTab(tab) {
-      const isQueue = tab === 'queue';
-      document.getElementById('queueView').classList.toggle('hidden', !isQueue);
-      document.getElementById('historyView').classList.toggle('hidden', isQueue);
-
-      document.getElementById('tabQueue').className = isQueue
-        ? 'flex-1 py-2.5 text-center text-white border-b-2 border-yellow-400 font-bold flex items-center justify-center space-x-1'
-        : 'flex-1 py-2.5 text-center text-blue-300 hover:text-white border-b-2 border-transparent flex items-center justify-center space-x-1';
-
-      document.getElementById('tabHistory').className = !isQueue
-        ? 'flex-1 py-2.5 text-center text-white border-b-2 border-yellow-400 font-bold flex items-center justify-center space-x-1'
-        : 'flex-1 py-2.5 text-center text-blue-300 hover:text-white border-b-2 border-transparent flex items-center justify-center space-x-1';
-
-      if (!isQueue) loadHistory();
+      ['queue', 'callbacks', 'leaderboard', 'history'].forEach(t => {
+        document.getElementById(`${t}View`).classList.toggle('hidden', t !== tab);
+        const btn = document.getElementById(`tab${t.charAt(0).toUpperCase() + t.slice(1)}`);
+        if (btn) btn.className = t === tab
+          ? 'flex-1 py-2.5 text-center text-white border-b-2 border-yellow-400 font-bold flex items-center justify-center space-x-1'
+          : 'flex-1 py-2.5 text-center text-blue-300 hover:text-white border-b-2 border-transparent flex items-center justify-center space-x-1';
+      });
+      if (tab === 'history') loadHistory();
+      if (tab === 'callbacks') renderCallbacks();
+      if (tab === 'leaderboard') loadLeaderboard();
     }
 
-    // 1-Click Copy Number to Clipboard
+    // ===== COPY NUMBER =====
     async function copyNumber(rawPhone, displayPhone) {
       try {
         await navigator.clipboard.writeText(rawPhone);
         showToast(`Copied: ${displayPhone}`);
       } catch (err) {
-        // Fallback for older browsers
         const input = document.createElement('input');
         input.value = rawPhone;
         document.body.appendChild(input);
@@ -170,21 +408,9 @@
       }
     }
 
-    // Fetch Stats
-    async function fetchStats() {
-      try {
-        const res = await fetch('/api/stats');
-        const data = await res.json();
-        document.getElementById('statUnseen').textContent = (data.unseen || 0).toLocaleString();
-        document.getElementById('statCalled').textContent = (data.called || 0).toLocaleString();
-        document.getElementById('headerSubtitle').textContent = `${(data.unseen || 0).toLocaleString()} contacts remaining`;
-      } catch (e) {
-        console.error('Stats error:', e);
-      }
-    }
-
-    // Load New 20 Contacts Batch
-    async function loadNewBatch() {
+    // ===== LOAD ASSIGNED LEADS =====
+    async function loadAssignedLeads() {
+      if (!currentUser) return;
       const container = document.getElementById('cardsContainer');
       const loader = document.getElementById('loadingIndicator');
       const emptyNotice = document.getElementById('emptyQueue');
@@ -192,66 +418,118 @@
       loader.classList.remove('hidden');
       emptyNotice.classList.add('hidden');
       container.innerHTML = '';
-      completedInBatch = 0;
-      updateBatchCounter();
 
       try {
-        const res = await fetch('/api/batch');
+        const res = await fetch(`/api/batch?agent=${encodeURIComponent(currentUser.username)}`);
         const data = await res.json();
         loader.classList.add('hidden');
 
-        if (!data.contacts || data.contacts.length === 0) {
+        activeBatch = data.contacts || [];
+        currentCallbacks = data.callbacks || [];
+        dailyTarget = data.dailyTarget || 30;
+        callsTodayCount = data.callsToday || 0;
+        interestedCount = data.interestedToday || 0;
+        shiftStatus = data.shiftStatus || 'offline';
+        updateShiftUI();
+
+        updateCounters();
+        updateCallbackBadge();
+
+        if (activeBatch.length === 0 && currentCallbacks.length === 0) {
           emptyNotice.classList.remove('hidden');
+          document.getElementById('headerSubtitle').textContent = 'No active leads assigned by admin';
           return;
         }
 
-        activeBatch = data.contacts;
-        renderCards(activeBatch);
-        fetchStats();
+        document.getElementById('headerSubtitle').textContent = `${activeBatch.length} leads in queue`;
+
+        // Sort hot leads first
+        const sorted = [...activeBatch].sort((a, b) => {
+          const aHot = (a.reconnection_score >= 0.95 && a.days_lapsed <= 45) ? 1 : 0;
+          const bHot = (b.reconnection_score >= 0.95 && b.days_lapsed <= 45) ? 1 : 0;
+          return bHot - aHot || b.reconnection_score - a.reconnection_score;
+        });
+
+        renderCards(sorted);
       } catch (err) {
         loader.classList.add('hidden');
-        container.innerHTML = `<div class="bg-red-50 text-red-700 p-4 rounded-xl text-xs">Error loading batch: ${err.message}</div>`;
+        container.innerHTML = `<div class="bg-red-50 text-red-700 p-4 rounded-xl text-xs">Error: ${err.message}</div>`;
       }
     }
 
-    // Render Contact Cards
+    function updateCounters() {
+      const remaining = activeBatch.length;
+      document.getElementById('statAssignedTotal').textContent = remaining + completedCount;
+      document.getElementById('statCompleted').textContent = completedCount;
+      document.getElementById('statRemaining').textContent = remaining;
+      document.getElementById('statInterested').textContent = interestedCount;
+
+      // Daily progress
+      const pct = dailyTarget > 0 ? Math.min(100, Math.round((callsTodayCount / dailyTarget) * 100)) : 0;
+      document.getElementById('dailyProgressBar').style.width = `${pct}%`;
+      document.getElementById('dailyProgressText').textContent = `${callsTodayCount}/${dailyTarget}`;
+      if (pct >= 100) {
+        document.getElementById('dailyProgressBar').classList.add('bg-yellow-400');
+        document.getElementById('dailyProgressBar').classList.remove('bg-emerald-400');
+      } else {
+        document.getElementById('dailyProgressBar').classList.remove('bg-yellow-400');
+        document.getElementById('dailyProgressBar').classList.add('bg-emerald-400');
+      }
+    }
+
+    function updateCallbackBadge() {
+      const badge = document.getElementById('callbackBadge');
+      if (currentCallbacks.length > 0) {
+        badge.textContent = currentCallbacks.length;
+        badge.classList.remove('hidden');
+      } else {
+        badge.classList.add('hidden');
+      }
+    }
+
+    // ===== RENDER CARDS =====
     function renderCards(contacts) {
       const container = document.getElementById('cardsContainer');
       container.innerHTML = '';
 
       contacts.forEach((c, idx) => {
-        const isTier1 = (c.tier || '').includes('Tier 1');
+        const isHot = c.reconnection_score >= 0.95 && c.days_lapsed <= 45;
         const isPremium = (c.offer || '').toLowerCase() === 'premium';
         const rawPhone = c.phone.startsWith('0') ? c.phone : ('0' + c.phone);
+        const waMsg = encodeURIComponent(`Muraho *${c.name}*, turakumenyesha ko konti yanyu ya Canal+ irahumanya. Twifuza kukugarura muri serivisi. Hello ${c.name}, your Canal+ subscription has expired. We would love to reconnect you. When can we talk?`);
 
         const card = document.createElement('div');
         card.id = `card-${c.id}`;
-        card.className = "bg-white rounded-2xl p-4 shadow-sm border border-slate-200 hover:shadow-md transition";
+        card.className = `bg-white rounded-2xl p-4 shadow-sm border-2 hover:shadow-md transition ${isHot ? 'hot-lead-card' : 'border-slate-200'}`;
 
         card.innerHTML = `
-          <!-- Header: Name & Plan Badge -->
+          <!-- Hot Lead Banner -->
+          ${isHot ? `<div class="flex items-center space-x-1.5 mb-2 bg-orange-50 border border-orange-200 rounded-lg px-2.5 py-1.5">
+            <span class="text-base">🔥</span>
+            <span class="text-xs font-extrabold text-orange-700 uppercase tracking-wide">Hot Lead — High Priority</span>
+          </div>` : ''}
+
           <div class="flex items-start justify-between mb-2">
-            <div>
-              <div class="flex items-center space-x-1.5 mb-0.5">
-                <span class="text-xs font-semibold px-2 py-0.5 rounded-full ${isTier1 ? 'bg-emerald-100 text-emerald-800' : 'bg-blue-100 text-blue-800'}">
-                  ${isTier1 ? '★ Tier 1 High Priority' : c.tier}
-                </span>
-                <span class="text-xs px-2 py-0.5 rounded-full ${isPremium ? 'bg-purple-100 text-purple-800 font-bold' : 'bg-slate-100 text-slate-700'}">
-                  ${c.offer}
-                </span>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center flex-wrap gap-1 mb-0.5">
+                <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">★ Tier 1</span>
+                <span class="text-xs px-2 py-0.5 rounded-full ${isPremium ? 'bg-purple-100 text-purple-800 font-bold' : 'bg-slate-100 text-slate-700'}">${esc(c.offer)}</span>
               </div>
-              <h3 class="text-base font-bold text-slate-900 leading-snug">${c.name}</h3>
-              <p class="text-xs text-slate-400">ID: ${c.sub_id} • ${c.city || 'Rwanda'}</p>
+              <h3 class="text-base font-bold text-slate-900 leading-snug truncate">${esc(c.name)}</h3>
+              <p class="text-xs text-slate-400">ID: ${esc(c.sub_id)} • ${esc(c.city || 'Rwanda')}</p>
             </div>
-            <span class="text-xs font-mono bg-slate-100 text-slate-600 px-2 py-1 rounded-md">#${idx + 1}</span>
+            <div class="flex flex-col items-end space-y-1 ml-2">
+              <span class="text-xs font-mono bg-slate-100 text-slate-600 px-2 py-1 rounded-md">#${idx + 1}</span>
+              <!-- Call Timer -->
+              <span id="timer-${c.id}" class="hidden text-xs timer-active">⏱ 00:00</span>
+            </div>
           </div>
 
-          <!-- Customer Loyalty Info Chips -->
-          <div class="flex flex-wrap gap-1.5 my-2.5 text-xs text-slate-600">
+          <div class="flex flex-wrap gap-1.5 my-2 text-xs text-slate-600">
             <span class="bg-slate-50 border border-slate-200 px-2 py-1 rounded-lg">
               <i class="fa-solid fa-arrows-rotate text-blue-600 mr-1"></i>${c.renewal_count} Renewals
             </span>
-            <span class="bg-slate-50 border border-slate-200 px-2 py-1 rounded-lg">
+            <span class="bg-slate-50 border border-slate-200 px-2 py-1 rounded-lg ${c.days_lapsed <= 45 ? 'text-emerald-700 font-semibold' : ''}">
               <i class="fa-regular fa-calendar-xmark text-amber-600 mr-1"></i>${c.days_lapsed}d overdue
             </span>
             <span class="bg-slate-50 border border-slate-200 px-2 py-1 rounded-lg font-semibold text-emerald-700">
@@ -259,62 +537,63 @@
             </span>
           </div>
 
-          <!-- Phone Number & Action Buttons -->
+          <!-- Phone Row -->
           <div class="bg-slate-50 rounded-xl p-2.5 border border-slate-200 my-3 flex items-center justify-between">
             <div>
               <div class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Subscriber Number</div>
-              <div class="text-lg font-extrabold text-blue-950 font-mono tracking-tight">${c.display_phone}</div>
+              <div class="text-lg font-extrabold text-blue-950 font-mono tracking-tight">${esc(c.display_phone)}</div>
             </div>
             <div class="flex items-center space-x-1.5">
-              <!-- 📋 Copy Number -->
-              <button onclick="copyNumber('${rawPhone}', '${c.display_phone}')" class="bg-white hover:bg-slate-100 text-slate-700 active:scale-90 border border-slate-300 font-semibold text-xs px-2.5 py-2 rounded-lg shadow-sm flex items-center space-x-1 transition" title="Copy Number">
+              <button onclick="copyNumber('${rawPhone}', '${esc(c.display_phone)}')"
+                class="bg-white hover:bg-slate-100 text-slate-700 active:scale-90 border border-slate-300 font-semibold text-xs px-2.5 py-2 rounded-lg shadow-sm flex items-center space-x-1 transition">
                 <i class="fa-regular fa-copy text-sm text-blue-700"></i>
                 <span class="hidden sm:inline">Copy</span>
               </button>
 
-              <!-- 📞 Call Link -->
-              <a href="tel:${c.formatted_phone}" class="bg-emerald-600 hover:bg-emerald-500 active:scale-90 text-white font-semibold text-xs px-3 py-2 rounded-lg shadow-sm flex items-center space-x-1 transition" title="Dial directly">
+              <a href="tel:${esc(c.formatted_phone)}" onclick="startTimer(${c.id})"
+                class="bg-emerald-600 hover:bg-emerald-500 active:scale-90 text-white font-semibold text-xs px-3 py-2 rounded-lg shadow-sm flex items-center space-x-1 transition">
                 <i class="fa-solid fa-phone text-xs"></i>
                 <span>Call</span>
               </a>
 
-              <!-- 💬 WhatsApp Link -->
-              <a href="https://wa.me/${c.formatted_phone.replace('+', '')}" target="_blank" class="bg-green-600 hover:bg-green-500 active:scale-90 text-white text-xs px-2.5 py-2 rounded-lg shadow-sm flex items-center transition" title="Open WhatsApp">
+              <a href="https://wa.me/${c.formatted_phone.replace('+', '')}?text=${waMsg}" target="_blank"
+                class="bg-green-600 hover:bg-green-500 active:scale-90 text-white text-xs px-2.5 py-2 rounded-lg shadow-sm flex items-center transition" title="WhatsApp with template">
                 <i class="fa-brands fa-whatsapp text-sm"></i>
               </a>
             </div>
           </div>
 
-          <!-- 1-Touch Outcome Buttons -->
+          <!-- Outcome Buttons -->
           <div class="mt-2.5">
             <div class="text-[11px] font-semibold text-slate-400 mb-1.5">Log Call Result:</div>
             <div class="grid grid-cols-2 sm:grid-cols-3 gap-1.5 text-xs">
-              <button onclick="logOutcome(${c.id}, 'Interested – Will Pay')" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 font-medium py-2 px-2 rounded-lg text-left truncate transition flex items-center space-x-1.5">
+              <button onclick="requestOutcome(${c.id}, 'Interested – Will Pay', '${esc(c.name)}', true)"
+                class="bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 font-medium py-2 px-2 rounded-lg text-left truncate transition flex items-center space-x-1.5">
                 <span class="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
                 <span class="truncate">Interested (MoMo)</span>
               </button>
-
-              <button onclick="logOutcome(${c.id}, 'No Answer / Switched Off')" class="bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 font-medium py-2 px-2 rounded-lg text-left truncate transition flex items-center space-x-1.5">
+              <button onclick="logOutcome(${c.id}, 'No Answer / Switched Off')"
+                class="bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 font-medium py-2 px-2 rounded-lg text-left truncate transition flex items-center space-x-1.5">
                 <span class="w-2 h-2 rounded-full bg-amber-500 shrink-0"></span>
                 <span class="truncate">No Answer</span>
               </button>
-
-              <button onclick="logOutcome(${c.id}, 'Callback Requested')" class="bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-300 font-medium py-2 px-2 rounded-lg text-left truncate transition flex items-center space-x-1.5">
+              <button onclick="requestOutcome(${c.id}, 'Callback Requested', '${esc(c.name)}', false, true)"
+                class="bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-300 font-medium py-2 px-2 rounded-lg text-left truncate transition flex items-center space-x-1.5">
                 <span class="w-2 h-2 rounded-full bg-blue-500 shrink-0"></span>
                 <span class="truncate">Callback</span>
               </button>
-
-              <button onclick="logOutcome(${c.id}, 'Refused / Not Interested')" class="bg-red-50 hover:bg-red-100 text-red-800 border border-red-300 font-medium py-2 px-2 rounded-lg text-left truncate transition flex items-center space-x-1.5">
+              <button onclick="logOutcome(${c.id}, 'Refused / Not Interested')"
+                class="bg-red-50 hover:bg-red-100 text-red-800 border border-red-300 font-medium py-2 px-2 rounded-lg text-left truncate transition flex items-center space-x-1.5">
                 <span class="w-2 h-2 rounded-full bg-red-500 shrink-0"></span>
                 <span class="truncate">Refused</span>
               </button>
-
-              <button onclick="logOutcome(${c.id}, 'Wrong Number')" class="bg-purple-50 hover:bg-purple-100 text-purple-800 border border-purple-300 font-medium py-2 px-2 rounded-lg text-left truncate transition flex items-center space-x-1.5">
+              <button onclick="logOutcome(${c.id}, 'Wrong Number')"
+                class="bg-purple-50 hover:bg-purple-100 text-purple-800 border border-purple-300 font-medium py-2 px-2 rounded-lg text-left truncate transition flex items-center space-x-1.5">
                 <span class="w-2 h-2 rounded-full bg-purple-500 shrink-0"></span>
                 <span class="truncate">Wrong Number</span>
               </button>
-
-              <button onclick="logOutcome(${c.id}, 'Already Renewed')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 font-medium py-2 px-2 rounded-lg text-left truncate transition flex items-center space-x-1.5">
+              <button onclick="logOutcome(${c.id}, 'Already Renewed')"
+                class="bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 font-medium py-2 px-2 rounded-lg text-left truncate transition flex items-center space-x-1.5">
                 <span class="w-2 h-2 rounded-full bg-slate-400 shrink-0"></span>
                 <span class="truncate">Already Paid</span>
               </button>
@@ -325,74 +604,211 @@
       });
     }
 
-    // Log Outcome & Animate Card Out
-    async function logOutcome(id, outcome) {
+    // ===== OUTCOME MODAL =====
+    function requestOutcome(id, outcome, name, requiresNotes = false, isCallback = false) {
+      pendingOutcome = { id, outcome, name, requiresNotes, isCallback };
+
+      document.getElementById('modalTitle').textContent = outcome;
+      document.getElementById('modalSubtitle').textContent = name;
+      document.getElementById('outcomeNotes').value = '';
+      document.getElementById('notesError').classList.add('hidden');
+
+      const callbackFields = document.getElementById('callbackFields');
+      const notesLabel = document.getElementById('notesLabel');
+
+      if (isCallback) {
+        callbackFields.classList.remove('hidden');
+        notesLabel.innerHTML = 'Leave a note <span class="text-slate-400">(optional)</span>';
+        // Default to tomorrow at 10am
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        tomorrow.setHours(10, 0, 0, 0);
+        document.getElementById('callbackDatetime').value = tomorrow.toISOString().slice(0, 16);
+      } else {
+        callbackFields.classList.add('hidden');
+        notesLabel.innerHTML = 'Payment method &amp; expected date <span class="text-red-500">*</span>';
+      }
+
+      document.getElementById('outcomeModal').classList.remove('hidden');
+    }
+
+    function closeModal() {
+      document.getElementById('outcomeModal').classList.add('hidden');
+      pendingOutcome = null;
+    }
+
+    function confirmOutcome() {
+      if (!pendingOutcome) return;
+      const notes = document.getElementById('outcomeNotes').value.trim();
+      const callbackAt = document.getElementById('callbackDatetime').value;
+
+      // For Interested, notes are required
+      if (pendingOutcome.requiresNotes && !notes) {
+        document.getElementById('notesError').classList.remove('hidden');
+        return;
+      }
+
+      closeModal();
+      logOutcome(pendingOutcome.id, pendingOutcome.outcome, notes, callbackAt);
+    }
+
+    // ===== LOG OUTCOME =====
+    async function logOutcome(id, outcome, notes = '', callbackAt = null) {
       const card = document.getElementById(`card-${id}`);
-      if (!card) return;
+      const duration = stopTimer();
 
-      // Animate card removal
-      card.classList.add('card-fade-out');
-      showToast(`Logged: ${outcome}`);
+      const isCallback = outcome.toLowerCase().includes('callback');
 
-      setTimeout(() => {
-        card.remove();
-        completedInBatch++;
-        updateBatchCounter();
-
-        // Check if all cards in current batch are done
-        const remaining = document.querySelectorAll('#cardsContainer > div');
-        if (remaining.length === 0) {
-          document.getElementById('emptyQueue').classList.remove('hidden');
+      if (card && !isCallback) {
+        card.classList.add('card-fade-out');
+        setTimeout(() => {
+          card.remove();
+          completedCount++;
+          callsTodayCount++;
+          if (outcome.includes('Interested')) interestedCount++;
+          activeBatch = activeBatch.filter(c => c.id !== id);
+          updateCounters();
+          if (activeBatch.length === 0 && currentCallbacks.filter(c => c.id !== id).length === 0) {
+            document.getElementById('emptyQueue').classList.remove('hidden');
+          }
+        }, 350);
+      } else if (card && isCallback) {
+        // Keep in queue but show callback scheduled badge
+        const existingBadge = card.querySelector('.callback-scheduled');
+        if (!existingBadge) {
+          const badge = document.createElement('div');
+          badge.className = 'callback-scheduled mt-2 bg-blue-50 text-blue-700 text-xs font-bold px-3 py-1.5 rounded-lg border border-blue-200 flex items-center space-x-1.5';
+          badge.innerHTML = '<i class="fa-solid fa-clock"></i><span>Callback scheduled</span>';
+          card.appendChild(badge);
         }
-      }, 350);
+      }
+
+      showToast(`Logged: ${outcome}`);
 
       try {
         await fetch('/api/outcome', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id, outcome })
+          body: JSON.stringify({ id, outcome, notes, agent: currentUser.username, callback_at: callbackAt, call_duration: duration })
         });
-        fetchStats();
+        if (isCallback) {
+          currentCallbacks = await reloadCallbacks();
+          updateCallbackBadge();
+        }
       } catch (err) {
         console.error('Error logging outcome:', err);
       }
     }
 
-    // Update Progress Counter
-    function updateBatchCounter() {
-      const total = activeBatch.length || 20;
-      document.getElementById('batchProgress').textContent = `${completedInBatch} / ${total}`;
+    async function reloadCallbacks() {
+      const res = await fetch(`/api/batch?agent=${encodeURIComponent(currentUser.username)}`);
+      const data = await res.json();
+      return data.callbacks || [];
     }
 
-    // Load History View
+    // ===== RENDER CALLBACKS =====
+    function renderCallbacks() {
+      const list = document.getElementById('callbacksList');
+      if (currentCallbacks.length === 0) {
+        list.innerHTML = '<div class="bg-white rounded-2xl p-8 text-center shadow-sm border border-slate-200"><i class="fa-solid fa-check-circle text-4xl text-emerald-400 mb-2"></i><p class="text-slate-600 font-semibold text-sm">No callbacks due today!</p><p class="text-xs text-slate-400 mt-1">Great job keeping up with your schedule.</p></div>';
+        return;
+      }
+      list.innerHTML = currentCallbacks.map(c => {
+        const callTime = c.callback_at ? new Date(c.callback_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : 'ASAP';
+        const waMsg = encodeURIComponent(`Muraho *${c.name}*, turakumenyesha ko konti yanyu ya Canal+. Hello ${c.name}, I am calling back as scheduled about your Canal+ subscription.`);
+        return `
+          <div class="bg-white rounded-2xl p-4 shadow-sm border-2 border-blue-200">
+            <div class="flex items-center justify-between mb-2">
+              <div>
+                <div class="font-bold text-slate-900 text-sm">${esc(c.name)}</div>
+                <div class="text-xs text-slate-400">${esc(c.display_phone)} • ${esc(c.city || 'Rwanda')}</div>
+              </div>
+              <div class="text-right">
+                <div class="text-sm font-black text-blue-700">⏰ ${callTime}</div>
+                <div class="text-[10px] text-slate-400">${c.notes || ''}</div>
+              </div>
+            </div>
+            <div class="flex space-x-2 mt-2">
+              <a href="tel:${esc(c.formatted_phone)}" onclick="startTimer(${c.id})"
+                class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold py-2 rounded-xl text-center flex items-center justify-center space-x-1 transition">
+                <i class="fa-solid fa-phone"></i><span>Call Now</span>
+              </a>
+              <a href="https://wa.me/${c.formatted_phone.replace('+', '')}?text=${waMsg}" target="_blank"
+                class="bg-green-600 hover:bg-green-500 text-white text-xs px-4 py-2 rounded-xl flex items-center transition">
+                <i class="fa-brands fa-whatsapp text-sm"></i>
+              </a>
+              <button onclick="logOutcome(${c.id}, 'Callback Complete', 'Follow-up done')"
+                class="bg-blue-600 hover:bg-blue-500 text-white text-xs px-3 py-2 rounded-xl flex items-center transition" title="Mark done">
+                <i class="fa-solid fa-check"></i>
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // ===== LEADERBOARD =====
+    async function loadLeaderboard() {
+      const list = document.getElementById('leaderboardList');
+      list.innerHTML = '<div class="text-center py-4 text-slate-400 text-xs"><i class="fa-solid fa-spinner fa-spin mr-1"></i> Loading...</div>';
+      try {
+        const res = await fetch('/api/leaderboard');
+        const data = await res.json();
+        const board = data.leaderboard || [];
+        const medals = ['🥇', '🥈', '🥉'];
+
+        list.innerHTML = board.map((a, idx) => {
+          const isMe = currentUser && a.username.toLowerCase() === currentUser.username.toLowerCase();
+          return `
+            <div class="flex items-center p-3 rounded-xl border ${isMe ? 'border-blue-300 bg-blue-50' : 'border-slate-200 bg-slate-50'}">
+              <div class="text-xl w-8 text-center">${medals[idx] || `${idx+1}.`}</div>
+              <div class="flex-1 min-w-0 ml-2">
+                <div class="font-bold text-sm text-slate-900 truncate">${esc(a.name)} ${isMe ? '<span class="text-blue-600 text-[10px]">← You</span>' : ''}</div>
+                <div class="text-xs text-slate-500">${a.calls_today} calls • ${a.interested_today} interested</div>
+              </div>
+              <div class="text-right ml-2">
+                <div class="text-sm font-black ${a.rate_today >= 20 ? 'text-emerald-600' : 'text-slate-700'}">${a.rate_today}%</div>
+                <div class="text-[10px] text-slate-400">conversion</div>
+              </div>
+              <div class="ml-2">
+                <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-full ${a.shift_status === 'online' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-500'}">
+                  ${a.shift_status === 'online' ? '🟢' : '⚫'}
+                </span>
+              </div>
+            </div>
+          `;
+        }).join('') || '<div class="text-center text-slate-400 text-xs py-4">No agent data yet today.</div>';
+      } catch (e) {
+        list.innerHTML = `<div class="text-red-500 text-xs">Error: ${e.message}</div>`;
+      }
+    }
+
+    // ===== HISTORY =====
     async function loadHistory() {
       const list = document.getElementById('historyList');
       list.innerHTML = '<div class="text-center py-6 text-slate-400 text-xs"><i class="fa-solid fa-spinner fa-spin mr-1"></i> Loading history...</div>';
-
       try {
         const res = await fetch('/api/history');
         const data = await res.json();
-        const history = data.history || [];
+        const history = (data.history || []).filter(h => !h.assigned_to || h.assigned_to.toLowerCase() === currentUser.username.toLowerCase());
 
         if (history.length === 0) {
-          list.innerHTML = '<div class="bg-white p-6 rounded-xl text-center text-slate-400 text-xs">No calls logged yet. Start calling from the queue!</div>';
+          list.innerHTML = '<div class="bg-white p-6 rounded-xl text-center text-slate-400 text-xs">No calls logged yet.</div>';
           return;
         }
 
         list.innerHTML = history.map(h => `
           <div class="bg-white rounded-xl p-3 shadow-sm border border-slate-200 flex items-center justify-between text-xs">
-            <div>
-              <div class="font-bold text-slate-800">${h.name}</div>
-              <div class="text-slate-400 font-mono">${h.display_phone} • ${h.offer}</div>
+            <div class="min-w-0 flex-1">
+              <div class="font-bold text-slate-800 truncate">${esc(h.name)}</div>
+              <div class="text-slate-400 font-mono truncate">${esc(h.display_phone)} • ${esc(h.offer)}</div>
               <div class="text-[10px] text-slate-400">${new Date(h.called_at + 'Z').toLocaleString()}</div>
             </div>
-            <span class="px-2 py-1 rounded-md text-[11px] font-semibold ${
+            <span class="ml-2 px-2 py-1 rounded-md text-[11px] font-semibold shrink-0 ${
               h.outcome.includes('Interested') ? 'bg-emerald-100 text-emerald-800' :
               h.outcome.includes('No Answer') ? 'bg-amber-100 text-amber-800' :
               h.outcome.includes('Refused') ? 'bg-red-100 text-red-800' : 'bg-slate-100 text-slate-700'
-            }">
-              ${h.outcome}
-            </span>
+            }">${esc(h.outcome)}</span>
           </div>
         `).join('');
       } catch (e) {
@@ -400,12 +816,27 @@
       }
     }
 
-    // Initialize on page load
+    // ===== INIT =====
     window.addEventListener('DOMContentLoaded', () => {
-      fetchStats();
-      loadNewBatch();
+      // Register Service Worker for PWA offline
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js').catch(() => {});
+      }
+
+      const stored = sessionStorage.getItem('canal_user');
+      if (stored) {
+        try {
+          currentUser = JSON.parse(stored);
+          if (currentUser.role === 'admin') {
+            window.location.href = '/admin.html';
+          } else {
+            startAgentWorkspace();
+          }
+        } catch (e) {
+          sessionStorage.removeItem('canal_user');
+        }
+      }
     });
   </script>
 </body>
 </html>
-
