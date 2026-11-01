@@ -254,31 +254,43 @@
         <span id="toastMsg">Done!</span>
       </div>
 
-      <!-- OUTCOME MODAL (for Interested — notes required) -->
+      <!-- OUTCOME MODAL (for all 6 outcomes with comments & quick chips) -->
       <div id="outcomeModal" class="hidden fixed inset-0 bg-slate-900/70 z-50 flex items-end sm:items-center justify-center p-4">
         <div class="bg-white rounded-3xl w-full max-w-sm shadow-2xl p-6">
-          <div class="flex items-center space-x-2 mb-4">
-            <div class="w-9 h-9 bg-emerald-100 text-emerald-700 rounded-xl flex items-center justify-center">
-              <i class="fa-solid fa-circle-check text-lg"></i>
+          <div class="flex items-center space-x-2.5 mb-3.5">
+            <div id="modalIconContainer" class="w-10 h-10 bg-emerald-100 text-emerald-700 rounded-xl flex items-center justify-center shrink-0">
+              <i id="modalIcon" class="fa-solid fa-circle-check text-lg"></i>
             </div>
-            <div>
-              <div class="text-sm font-black text-slate-900" id="modalTitle">Interested — Will Pay</div>
-              <div class="text-[11px] text-slate-500" id="modalSubtitle">Add payment details before saving</div>
+            <div class="min-w-0 flex-1">
+              <div class="text-sm font-black text-slate-900 truncate" id="modalTitle">Interested (MoMo)</div>
+              <div class="text-[11px] text-slate-500 truncate" id="modalSubtitle">Add payment details before saving</div>
             </div>
+            <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 p-1" title="Cancel">
+              <i class="fa-solid fa-xmark text-sm"></i>
+            </button>
           </div>
 
           <!-- Callback date/time (shown when outcome is Callback) -->
-          <div id="callbackFields" class="hidden mb-3 space-y-2">
-            <label class="text-xs font-bold text-slate-700">Schedule Callback Date &amp; Time</label>
+          <div id="callbackFields" class="hidden mb-3 space-y-1.5">
+            <label class="text-xs font-bold text-slate-700 flex items-center space-x-1">
+              <i class="fa-regular fa-calendar-check text-blue-600"></i>
+              <span>Schedule Callback Date &amp; Time</span>
+            </label>
             <input type="datetime-local" id="callbackDatetime"
               class="w-full px-3.5 py-2.5 rounded-xl border border-blue-300 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none font-mono">
           </div>
 
+          <!-- Quick comment suggestion chips -->
+          <div class="mb-3">
+            <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Quick Notes (tap to fill):</div>
+            <div id="quickChipsContainer" class="flex flex-wrap gap-1 max-h-24 overflow-y-auto"></div>
+          </div>
+
           <div class="mb-4">
-            <label class="text-xs font-bold text-slate-700 mb-1 block" id="notesLabel">Payment method &amp; expected date <span class="text-red-500">*</span></label>
-            <textarea id="outcomeNotes" rows="3" placeholder="e.g. MoMo payment — will pay on Saturday..."
+            <label class="text-xs font-bold text-slate-700 mb-1 block" id="notesLabel">Agent Comment / Message <span class="text-red-500">*</span></label>
+            <textarea id="outcomeNotes" rows="3" placeholder="Type call notes or tap a suggestion above..."
               class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none resize-none"></textarea>
-            <div id="notesError" class="hidden text-xs text-red-500 mt-1">Notes are required for this outcome.</div>
+            <div id="notesError" class="hidden text-xs text-red-500 mt-1">Please enter or choose a comment before saving.</div>
           </div>
 
           <div class="flex space-x-3">
@@ -699,33 +711,33 @@
           <div class="mt-2.5">
             <div class="text-[11px] font-semibold text-slate-400 mb-1.5">Log Call Result:</div>
             <div class="grid grid-cols-2 sm:grid-cols-3 gap-1.5 text-xs">
-              <button onclick="requestOutcome(${c.id}, 'Interested – Will Pay', '${esc(c.name)}', true)"
-                class="bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 font-medium py-2 px-2 rounded-lg text-left truncate transition flex items-center space-x-1.5">
+              <button onclick="requestOutcome(${c.id}, 'interested', '${esc(c.name)}')"
+                class="bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 font-medium py-2 px-2 rounded-lg text-left truncate transition flex items-center space-x-1.5 active:scale-95">
                 <span class="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
                 <span class="truncate">Interested (MoMo)</span>
               </button>
-              <button onclick="logOutcome(${c.id}, 'No Answer / Switched Off')"
-                class="bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 font-medium py-2 px-2 rounded-lg text-left truncate transition flex items-center space-x-1.5">
+              <button onclick="requestOutcome(${c.id}, 'no_answer', '${esc(c.name)}')"
+                class="bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 font-medium py-2 px-2 rounded-lg text-left truncate transition flex items-center space-x-1.5 active:scale-95">
                 <span class="w-2 h-2 rounded-full bg-amber-500 shrink-0"></span>
                 <span class="truncate">No Answer</span>
               </button>
-              <button onclick="requestOutcome(${c.id}, 'Callback Requested', '${esc(c.name)}', false, true)"
-                class="bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-300 font-medium py-2 px-2 rounded-lg text-left truncate transition flex items-center space-x-1.5">
+              <button onclick="requestOutcome(${c.id}, 'callback', '${esc(c.name)}')"
+                class="bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-300 font-medium py-2 px-2 rounded-lg text-left truncate transition flex items-center space-x-1.5 active:scale-95">
                 <span class="w-2 h-2 rounded-full bg-blue-500 shrink-0"></span>
                 <span class="truncate">Callback</span>
               </button>
-              <button onclick="logOutcome(${c.id}, 'Refused / Not Interested')"
-                class="bg-red-50 hover:bg-red-100 text-red-800 border border-red-300 font-medium py-2 px-2 rounded-lg text-left truncate transition flex items-center space-x-1.5">
+              <button onclick="requestOutcome(${c.id}, 'refused', '${esc(c.name)}')"
+                class="bg-red-50 hover:bg-red-100 text-red-800 border border-red-300 font-medium py-2 px-2 rounded-lg text-left truncate transition flex items-center space-x-1.5 active:scale-95">
                 <span class="w-2 h-2 rounded-full bg-red-500 shrink-0"></span>
                 <span class="truncate">Refused</span>
               </button>
-              <button onclick="logOutcome(${c.id}, 'Wrong Number')"
-                class="bg-purple-50 hover:bg-purple-100 text-purple-800 border border-purple-300 font-medium py-2 px-2 rounded-lg text-left truncate transition flex items-center space-x-1.5">
+              <button onclick="requestOutcome(${c.id}, 'wrong_number', '${esc(c.name)}')"
+                class="bg-purple-50 hover:bg-purple-100 text-purple-800 border border-purple-300 font-medium py-2 px-2 rounded-lg text-left truncate transition flex items-center space-x-1.5 active:scale-95">
                 <span class="w-2 h-2 rounded-full bg-purple-500 shrink-0"></span>
                 <span class="truncate">Wrong Number</span>
               </button>
-              <button onclick="logOutcome(${c.id}, 'Already Renewed')"
-                class="bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 font-medium py-2 px-2 rounded-lg text-left truncate transition flex items-center space-x-1.5">
+              <button onclick="requestOutcome(${c.id}, 'already_paid', '${esc(c.name)}')"
+                class="bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 font-medium py-2 px-2 rounded-lg text-left truncate transition flex items-center space-x-1.5 active:scale-95">
                 <span class="w-2 h-2 rounded-full bg-slate-400 shrink-0"></span>
                 <span class="truncate">Already Paid</span>
               </button>
@@ -736,32 +748,169 @@
       });
     }
 
-    // ===== OUTCOME MODAL =====
-    function requestOutcome(id, outcome, name, requiresNotes = false, isCallback = false) {
-      pendingOutcome = { id, outcome, name, requiresNotes, isCallback };
+    // ===== OUTCOME CONFIG (6 OUTCOMES WITH COMMENTS & QUICK CHIPS) =====
+    const OUTCOME_CONFIG = {
+      'interested': {
+        outcome: 'Interested – Will Pay',
+        title: 'Interested (MoMo)',
+        subtitle: 'Enter payment details & date',
+        label: 'Payment method & date',
+        placeholder: 'e.g. Will pay 25k via MTN MoMo tonight...',
+        icon: 'fa-solid fa-circle-check text-lg',
+        iconColor: 'bg-emerald-100 text-emerald-700',
+        btnClass: 'bg-emerald-600 hover:bg-emerald-500',
+        chips: [
+          'Will pay today via MoMo',
+          'Will pay end of month',
+          'Promised tomorrow',
+          'Needs technician visit',
+          'Confirmed active modem'
+        ]
+      },
+      'no_answer': {
+        outcome: 'No Answer / Switched Off',
+        title: 'No Answer',
+        subtitle: 'Log call attempt note',
+        label: 'Call note / observation',
+        placeholder: 'e.g. Ringing no answer, sent WhatsApp...',
+        icon: 'fa-solid fa-phone-slash text-lg',
+        iconColor: 'bg-amber-100 text-amber-700',
+        btnClass: 'bg-amber-600 hover:bg-amber-500',
+        chips: [
+          'Ringing no answer',
+          'Phone switched off',
+          'Line busy / rejected',
+          'Sent WhatsApp follow-up',
+          'Voicemail tone only'
+        ]
+      },
+      'callback': {
+        outcome: 'Callback Requested',
+        title: 'Callback',
+        subtitle: 'Set date, time & callback reason',
+        label: 'Client callback request / note',
+        placeholder: 'e.g. In meeting, call back after 5pm...',
+        icon: 'fa-solid fa-clock-rotate-left text-lg',
+        iconColor: 'bg-blue-100 text-blue-700',
+        btnClass: 'bg-blue-600 hover:bg-blue-500',
+        chips: [
+          'Call back this evening',
+          'Call back tomorrow 10am',
+          'Call back on weekend',
+          'Discussing with family',
+          'Sent WhatsApp details first'
+        ]
+      },
+      'refused': {
+        outcome: 'Refused / Not Interested',
+        title: 'Refused',
+        subtitle: 'Log client objection / reason',
+        label: 'Reason for refusal',
+        placeholder: 'e.g. Switched to Liquid Telecom, financial issue...',
+        icon: 'fa-solid fa-circle-xmark text-lg',
+        iconColor: 'bg-red-100 text-red-700',
+        btnClass: 'bg-red-600 hover:bg-red-500',
+        chips: [
+          'Financial issue / price',
+          'Switched to Liquid / MTN fiber',
+          'Moved to area without fiber',
+          'No longer needs internet',
+          'Complained about past service'
+        ]
+      },
+      'wrong_number': {
+        outcome: 'Wrong Number',
+        title: 'Wrong Number',
+        subtitle: 'Number verification note',
+        label: 'Verification note',
+        placeholder: 'e.g. Belongs to someone else, never had Canalbox...',
+        icon: 'fa-solid fa-triangle-exclamation text-lg',
+        iconColor: 'bg-purple-100 text-purple-700',
+        btnClass: 'bg-purple-600 hover:bg-purple-500',
+        chips: [
+          'Wrong person / never had Canalbox',
+          'Number belongs to relative',
+          'Number out of service / invalid',
+          'Client changed phone number',
+          'Line disconnected'
+        ]
+      },
+      'already_paid': {
+        outcome: 'Already Renewed',
+        title: 'Already Paid',
+        subtitle: 'Payment verification note',
+        label: 'Payment details',
+        placeholder: 'e.g. Paid yesterday via MoMo, box is active...',
+        icon: 'fa-solid fa-receipt text-lg',
+        iconColor: 'bg-slate-200 text-slate-800',
+        btnClass: 'bg-slate-800 hover:bg-slate-700',
+        chips: [
+          'Paid today via MoMo',
+          'Paid yesterday — active now',
+          'Has SMS payment proof',
+          'Paid but WiFi not yet active',
+          'Renewed for 3 months'
+        ]
+      }
+    };
 
-      document.getElementById('modalTitle').textContent = outcome;
-      document.getElementById('modalSubtitle').textContent = name;
-      document.getElementById('outcomeNotes').value = '';
+    // ===== OUTCOME MODAL =====
+    function requestOutcome(id, outcomeKey, name) {
+      const cfg = OUTCOME_CONFIG[outcomeKey] || OUTCOME_CONFIG['interested'];
+      const isCallback = outcomeKey === 'callback';
+
+      pendingOutcome = { id, outcome: cfg.outcome, outcomeKey, name, isCallback };
+
+      document.getElementById('modalTitle').textContent = `${cfg.title} — ${name}`;
+      document.getElementById('modalSubtitle').textContent = cfg.subtitle;
+      document.getElementById('modalIcon').className = cfg.icon;
+      document.getElementById('modalIconContainer').className = `w-10 h-10 ${cfg.iconColor} rounded-xl flex items-center justify-center shrink-0`;
+      
+      const saveBtn = document.getElementById('confirmOutcomeBtn');
+      saveBtn.className = `flex-1 ${cfg.btnClass} text-white font-bold py-2.5 rounded-xl text-sm shadow transition active:scale-95`;
+
+      document.getElementById('notesLabel').innerHTML = `${cfg.label} <span class="text-red-500">*</span>`;
+      
+      const textarea = document.getElementById('outcomeNotes');
+      textarea.value = '';
+      textarea.placeholder = cfg.placeholder;
       document.getElementById('notesError').classList.add('hidden');
 
-      const callbackFields = document.getElementById('callbackFields');
-      const notesLabel = document.getElementById('notesLabel');
+      // Populate Quick Chips
+      const chipsBox = document.getElementById('quickChipsContainer');
+      chipsBox.innerHTML = '';
+      (cfg.chips || []).forEach(chip => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'text-[11px] bg-slate-100 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 border border-slate-200 text-slate-700 px-2.5 py-1 rounded-lg transition active:scale-95';
+        btn.textContent = chip;
+        btn.onclick = () => applyChip(chip);
+        chipsBox.appendChild(btn);
+      });
 
+      const callbackFields = document.getElementById('callbackFields');
       if (isCallback) {
         callbackFields.classList.remove('hidden');
-        notesLabel.innerHTML = 'Leave a note <span class="text-slate-400">(optional)</span>';
-        // Default to tomorrow at 10am
         const tomorrow = new Date();
         tomorrow.setDate(tomorrow.getDate() + 1);
         tomorrow.setHours(10, 0, 0, 0);
         document.getElementById('callbackDatetime').value = tomorrow.toISOString().slice(0, 16);
       } else {
         callbackFields.classList.add('hidden');
-        notesLabel.innerHTML = 'Payment method &amp; expected date <span class="text-red-500">*</span>';
       }
 
       document.getElementById('outcomeModal').classList.remove('hidden');
+      setTimeout(() => textarea.focus(), 80);
+    }
+
+    function applyChip(text) {
+      const textarea = document.getElementById('outcomeNotes');
+      if (!textarea.value.trim()) {
+        textarea.value = text;
+      } else if (!textarea.value.includes(text)) {
+        textarea.value = textarea.value.trim() + ' — ' + text;
+      }
+      document.getElementById('notesError').classList.add('hidden');
     }
 
     function closeModal() {
@@ -774,14 +923,13 @@
       const notes = document.getElementById('outcomeNotes').value.trim();
       const callbackAt = document.getElementById('callbackDatetime').value;
 
-      // For Interested, notes are required
-      if (pendingOutcome.requiresNotes && !notes) {
+      if (!notes) {
         document.getElementById('notesError').classList.remove('hidden');
         return;
       }
 
       closeModal();
-      logOutcome(pendingOutcome.id, pendingOutcome.outcome, notes, callbackAt);
+      logOutcome(pendingOutcome.id, pendingOutcome.outcome, notes, pendingOutcome.isCallback ? callbackAt : null);
     }
 
     // ===== LOG OUTCOME =====
