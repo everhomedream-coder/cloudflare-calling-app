@@ -3,6 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#111827">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="/manifest.json">
   <title>Canal+ Rwanda — Admin Dashboard</title>
   <link rel="icon" type="image/jpeg" href="/logo.jpg">
   <link rel="apple-touch-icon" href="/logo.jpg">
@@ -24,6 +28,122 @@
     }
     .card-shadow {
       box-shadow: 0px 5px 22px rgba(0, 0, 0, 0.04), 0px 0px 0px 1px rgba(0, 0, 0, 0.06);
+    }
+
+    /* ── PWA Install Floating Banner (Exact RebaFilmes Style) ── */
+    .pwa-banner-wrapper {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 999;
+      width: 380px;
+      max-width: calc(100vw - 32px);
+      animation: pwaSlideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      pointer-events: auto;
+    }
+    @keyframes pwaSlideUp {
+      from { opacity: 0; transform: translate(-50%, 28px); }
+      to { opacity: 1; transform: translate(-50%, 0); }
+    }
+    .pwa-banner-card {
+      background: rgba(18, 18, 24, 0.96);
+      background-color: #14141c;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 14px;
+      padding: 14px 16px 14px;
+      box-shadow: 
+        0 16px 40px rgba(0, 0, 0, 0.65), 
+        0 4px 12px rgba(0, 0, 0, 0.4),
+        0 0 0 1px rgba(255, 255, 255, 0.05);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .pwa-banner-content {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      position: relative;
+    }
+    .pwa-banner-logo {
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      object-fit: cover;
+      flex-shrink: 0;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    }
+    .pwa-banner-text {
+      flex: 1;
+      min-width: 0;
+      padding-right: 20px;
+    }
+    .pwa-banner-title {
+      margin: 0 0 3px;
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: #ffffff;
+      line-height: 1.25;
+      letter-spacing: -0.01em;
+    }
+    .pwa-banner-desc {
+      margin: 0;
+      font-size: 0.78rem;
+      line-height: 1.35;
+      color: #9ca3af;
+    }
+    .pwa-banner-close {
+      position: absolute;
+      top: -2px;
+      right: -4px;
+      background: transparent;
+      border: none;
+      color: #9ca3af;
+      cursor: pointer;
+      padding: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 6px;
+      transition: color 0.15s ease, background 0.15s ease;
+    }
+    .pwa-banner-close:hover {
+      color: #ffffff;
+      background: rgba(255, 255, 255, 0.08);
+    }
+    .pwa-banner-btn {
+      width: 100%;
+      background: #2563eb;
+      background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+      color: #ffffff;
+      font-size: 0.88rem;
+      font-weight: 600;
+      padding: 10px 16px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      text-align: center;
+      transition: filter 0.2s ease, transform 0.12s ease, box-shadow 0.2s ease;
+      box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+      user-select: none;
+    }
+    .pwa-banner-btn:hover {
+      filter: brightness(1.12);
+      box-shadow: 0 6px 18px rgba(37, 99, 235, 0.5);
+    }
+    .pwa-banner-btn:active {
+      transform: scale(0.98);
+    }
+    @media (max-width: 768px) {
+      .pwa-banner-wrapper {
+        bottom: 20px;
+        width: calc(100vw - 28px);
+        max-width: 380px;
+      }
     }
   </style>
 </head>
@@ -100,6 +220,11 @@
         <i class="fa-solid fa-download text-sm w-4 text-indigo-400"></i>
         <span>Export CSV File</span>
       </a>
+
+      <button type="button" onclick="triggerPwaInstall()" class="w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl transition text-blue-400 hover:bg-blue-950/40 hover:text-blue-300">
+        <i class="fa-solid fa-mobile-screen-button text-sm w-4"></i>
+        <span>Install App</span>
+      </button>
     </nav>
 
     <!-- Sign Out Button -->
@@ -141,6 +266,12 @@
         <button onclick="switchView('dispatch')" class="bg-blue-600 hover:bg-blue-500 active:scale-95 text-white text-xs font-bold px-3.5 py-2 rounded-xl shadow-sm transition flex items-center space-x-1.5">
           <i class="fa-solid fa-rotate text-xs"></i>
           <span class="hidden md:inline">Assign Leads</span>
+        </button>
+
+        <!-- Install App Pill Button -->
+        <button onclick="triggerPwaInstall()" class="bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 text-xs font-bold px-3 py-2 rounded-xl transition flex items-center space-x-1.5" title="Install App to Home Screen / Desktop">
+          <i class="fa-solid fa-download text-xs text-blue-600"></i>
+          <span class="hidden sm:inline">Install</span>
         </button>
 
         <!-- Notification Bell -->
@@ -1503,6 +1634,125 @@
       loadAdminStats();
       loadAssign20Preview();
     });
+
+    // ===== PWA INSTALL LOGIC =====
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').catch(err => {
+          console.warn('Admin SW registration failed:', err);
+        });
+      });
+    }
+
+    let deferredPrompt = null;
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      const lastDismissed = localStorage.getItem('pwa_admin_banner_dismissed');
+      if (!lastDismissed || Date.now() - parseInt(lastDismissed) > 43200000) {
+        showInstallBanner();
+      }
+    });
+
+    function showInstallBanner() {
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+      if (!isStandalone) {
+        const banner = document.getElementById('pwaInstallBanner');
+        if (banner) banner.classList.remove('hidden');
+      }
+    }
+
+    function dismissInstallBanner() {
+      const banner = document.getElementById('pwaInstallBanner');
+      if (banner) banner.classList.add('hidden');
+      localStorage.setItem('pwa_admin_banner_dismissed', Date.now());
+    }
+
+    async function triggerPwaInstall() {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        if (outcome === 'accepted') {
+          dismissInstallBanner();
+        }
+        deferredPrompt = null;
+      } else {
+        const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+        if (isIos) {
+          document.getElementById('iosInstallModal').classList.remove('hidden');
+        } else {
+          showInstallBanner();
+          showToast('Tap "Install app" or use browser menu (⋮) -> "Install App"');
+        }
+      }
+    }
+
+    function closeIosInstallModal() {
+      document.getElementById('iosInstallModal').classList.add('hidden');
+    }
+
+    window.addEventListener('load', () => {
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+      if (!isStandalone) {
+        const lastDismissed = localStorage.getItem('pwa_admin_banner_dismissed');
+        if (!lastDismissed || Date.now() - parseInt(lastDismissed) > 43200000) {
+          setTimeout(showInstallBanner, 3000);
+        }
+      }
+    });
   </script>
+
+  <!-- ==================== PWA INSTALL BANNER (EXACT USER SCREENSHOT) ==================== -->
+  <div id="pwaInstallBanner" class="pwa-banner-wrapper hidden" role="region" aria-label="Install app banner">
+    <div class="pwa-banner-card">
+      <div class="pwa-banner-content">
+        <img src="/logo.jpg" alt="Logo" class="pwa-banner-logo">
+        <div class="pwa-banner-text">
+          <h4 class="pwa-banner-title">Install Canal+ Admin App</h4>
+          <p class="pwa-banner-desc">Add our app to your home screen for a faster, full-screen experience.</p>
+        </div>
+        <button type="button" onclick="dismissInstallBanner()" class="pwa-banner-close" aria-label="Close" title="Dismiss">
+          <i class="fa-solid fa-xmark text-sm"></i>
+        </button>
+      </div>
+      <button type="button" onclick="triggerPwaInstall()" class="pwa-banner-btn">
+        Install app
+      </button>
+    </div>
+  </div>
+
+  <!-- iOS Safari Install Instruction Modal -->
+  <div id="iosInstallModal" class="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-end sm:items-center justify-center p-4 hidden">
+    <div class="bg-white text-slate-800 rounded-3xl p-6 max-w-sm w-full shadow-2xl border border-slate-200">
+      <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center space-x-2.5">
+          <img src="/logo.jpg" alt="Logo" class="w-10 h-10 rounded-xl object-cover shadow-sm">
+          <div>
+            <h4 class="font-bold text-sm text-slate-900 leading-tight">Install on iPhone / iPad</h4>
+            <p class="text-[11px] text-slate-400">Add to Home Screen in 3 steps</p>
+          </div>
+        </div>
+        <button onclick="closeIosInstallModal()" class="text-slate-400 hover:text-slate-600 p-1">
+          <i class="fa-solid fa-xmark text-sm"></i>
+        </button>
+      </div>
+      <div class="space-y-3 text-xs text-slate-600">
+        <div class="flex items-start space-x-3 bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+          <div class="w-6 h-6 rounded-full bg-blue-100 text-blue-700 font-bold flex items-center justify-center shrink-0 text-xs">1</div>
+          <p>Tap the <strong>Share</strong> button <i class="fa-solid fa-arrow-up-from-bracket text-blue-600 mx-1"></i> at the bottom of Safari.</p>
+        </div>
+        <div class="flex items-start space-x-3 bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+          <div class="w-6 h-6 rounded-full bg-blue-100 text-blue-700 font-bold flex items-center justify-center shrink-0 text-xs">2</div>
+          <p>Scroll down and tap <strong class="text-slate-900">Add to Home Screen</strong> <i class="fa-regular fa-square-plus text-slate-800 mx-1"></i>.</p>
+        </div>
+        <div class="flex items-start space-x-3 bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+          <div class="w-6 h-6 rounded-full bg-blue-100 text-blue-700 font-bold flex items-center justify-center shrink-0 text-xs">3</div>
+          <p>Tap <strong class="text-blue-600">Add</strong> in the top right corner. The app will install on your home screen!</p>
+        </div>
+      </div>
+      <button onclick="closeIosInstallModal()" class="w-full mt-4 bg-blue-900 hover:bg-blue-800 text-white font-bold py-2.5 rounded-xl text-xs transition">Got it</button>
+    </div>
+  </div>
 </body>
 </html>

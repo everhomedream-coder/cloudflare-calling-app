@@ -1,10 +1,11 @@
 // Service Worker for Canal+ Rwanda Telesales App
 // Provides offline shell caching and network resilience
 
-const CACHE_NAME = 'canal-plus-v2';
+const CACHE_NAME = 'canal-plus-v3';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
+  '/admin.html',
   '/manifest.json',
   '/logo.jpg',
   'https://cdn.tailwindcss.com',
