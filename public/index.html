@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#1e3a8a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Canal+ Rwanda Calling Workspace</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body { -webkit-tap-highlight-color: transparent; }
+    .card-fade-out {
+      transition: all 0.35s ease-out;
+      opacity: 0;
+      transform: translateY(-15px) scale(0.96);
+      max-height: 0;
+      margin-top: 0;
+      margin-bottom: 0;
+      padding-top: 0;
+      padding-bottom: 0;
+      overflow: hidden;
+    }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-800 font-sans min-h-screen pb-20">
+
+  <!-- Fixed Top Header -->
+  <header class="sticky top-0 z-30 bg-blue-900 text-white shadow-md">
+    <div class="max-w-xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center space-x-2">
+        <div class="w-8 h-8 rounded-lg bg-red-600 flex items-center justify-center font-bold text-white shadow">
+          C+
+        </div>
+        <div>
+          <h1 class="text-base font-bold leading-tight">Canal+ Telesales</h1>
+          <p class="text-xs text-blue-200" id="headerSubtitle">Loading leads...</p>
+        </div>
+      </div>
+      <button onclick="loadNewBatch()" class="bg-blue-700 hover:bg-blue-600 active:scale-95 text-white text-xs font-semibold px-3 py-2 rounded-lg flex items-center space-x-1.5 shadow transition">
+        <i class="fa-solid fa-rotate-right"></i>
+        <span>Next 20</span>
+      </button>
+    </div>
+
+    <!-- Live Stats Bar -->
+    <div class="bg-blue-950 px-4 py-2 border-t border-blue-800">
+      <div class="max-w-xl mx-auto flex items-center justify-between text-xs">
+        <span class="text-slate-300">
+          Unseen: <strong id="statUnseen" class="text-white font-bold">--</strong>
+        </span>
+        <span class="text-slate-300">
+          Called: <strong id="statCalled" class="text-green-400 font-bold">--</strong>
+        </span>
+        <span class="text-slate-300">
+          Batch: <strong id="batchProgress" class="text-yellow-400 font-bold">0 / 20</strong>
+        </span>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="max-w-xl mx-auto flex border-t border-blue-800 text-xs font-medium">
+      <button onclick="switchTab('queue')" id="tabQueue" class="flex-1 py-2.5 text-center text-white border-b-2 border-yellow-400 font-bold flex items-center justify-center space-x-1">
+        <i class="fa-solid fa-phone"></i>
+        <span>Today's Queue</span>
+      </button>
+      <button onclick="switchTab('history')" id="tabHistory" class="flex-1 py-2.5 text-center text-blue-300 hover:text-white border-b-2 border-transparent flex items-center justify-center space-x-1">
+        <i class="fa-solid fa-clock-rotate-left"></i>
+        <span>Call History</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="max-w-xl mx-auto px-3.5 pt-3">
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed top-16 left-1/2 -translate-x-1/2 z-50 bg-emerald-600 text-white text-xs font-bold px-4 py-2 rounded-full shadow-lg transition-all duration-300 opacity-0 pointer-events-none flex items-center space-x-1.5">
+      <i class="fa-solid fa-check-circle"></i>
+      <span id="toastMsg">Copied!</span>
+    </div>
+
+    <!-- VIEW 1: QUEUE VIEW -->
+    <section id="queueView">
+      <div id="loadingIndicator" class="text-center py-12 text-slate-500">
+        <i class="fa-solid fa-spinner fa-spin text-3xl text-blue-800 mb-2"></i>
+        <p class="text-xs">Loading fresh unseen contacts...</p>
+      </div>
+
+      <div id="emptyQueue" class="hidden text-center py-12 px-4 bg-white rounded-2xl shadow-sm border border-slate-200 mt-2">
+        <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-3 text-2xl">
+          <i class="fa-solid fa-circle-check"></i>
+        </div>
+        <h3 class="text-lg font-bold text-slate-800">Batch Completed!</h3>
+        <p class="text-xs text-slate-500 mt-1 mb-4">All contacts in this batch have been processed.</p>
+        <button onclick="loadNewBatch()" class="bg-blue-800 hover:bg-blue-700 active:scale-95 text-white font-semibold text-sm px-5 py-2.5 rounded-xl shadow-md transition flex items-center space-x-2 mx-auto">
+          <i class="fa-solid fa-arrow-right"></i>
+          <span>Load Next 20 Fresh Contacts</span>
+        </button>
+      </div>
+
+      <!-- Contact Cards Container -->
+      <div id="cardsContainer" class="space-y-3.5"></div>
+    </section>
+
+    <!-- VIEW 2: HISTORY VIEW -->
+    <section id="historyView" class="hidden">
+      <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-200 mb-3">
+        <h2 class="text-sm font-bold text-slate-800 mb-1 flex items-center justify-between">
+          <span>Recent Call Outcomes</span>
+          <button onclick="loadHistory()" class="text-xs text-blue-700 hover:underline">
+            <i class="fa-solid fa-rotate-right"></i> Refresh
+          </button>
+        </h2>
+        <p class="text-xs text-slate-500">Last 50 calls logged by you</p>
+      </div>
+      <div id="historyList" class="space-y-2.5">
+        <div class="text-center py-8 text-slate-400 text-xs">Loading history...</div>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    let activeBatch = [];
+    let completedInBatch = 0;
+
+    // Toast Alert
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      document.getElementById('toastMsg').textContent = msg;
+      toast.classList.remove('opacity-0', 'pointer-events-none');
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'pointer-events-none');
+      }, 1800);
+    }
+
+    // Tab Switcher
+    function switchTab(tab) {
+      const isQueue = tab === 'queue';
+      document.getElementById('queueView').classList.toggle('hidden', !isQueue);
+      document.getElementById('historyView').classList.toggle('hidden', isQueue);
+
+      document.getElementById('tabQueue').className = isQueue
+        ? 'flex-1 py-2.5 text-center text-white border-b-2 border-yellow-400 font-bold flex items-center justify-center space-x-1'
+        : 'flex-1 py-2.5 text-center text-blue-300 hover:text-white border-b-2 border-transparent flex items-center justify-center space-x-1';
+
+      document.getElementById('tabHistory').className = !isQueue
+        ? 'flex-1 py-2.5 text-center text-white border-b-2 border-yellow-400 font-bold flex items-center justify-center space-x-1'
+        : 'flex-1 py-2.5 text-center text-blue-300 hover:text-white border-b-2 border-transparent flex items-center justify-center space-x-1';
+
+      if (!isQueue) loadHistory();
+    }
+
+    // 1-Click Copy Number to Clipboard
+    async function copyNumber(rawPhone, displayPhone) {
+      try {
+        await navigator.clipboard.writeText(rawPhone);
+        showToast(`Copied: ${displayPhone}`);
+      } catch (err) {
+        // Fallback for older browsers
+        const input = document.createElement('input');
+        input.value = rawPhone;
+        document.body.appendChild(input);
+        input.select();
+        document.execCommand('copy');
+        document.body.removeChild(input);
+        showToast(`Copied: ${displayPhone}`);
+      }
+    }
+
+    // Fetch Stats
+    async function fetchStats() {
+      try {
+        const res = await fetch('/api/stats');
+        const data = await res.json();
+        document.getElementById('statUnseen').textContent = (data.unseen || 0).toLocaleString();
+        document.getElementById('statCalled').textContent = (data.called || 0).toLocaleString();
+        document.getElementById('headerSubtitle').textContent = `${(data.unseen || 0).toLocaleString()} contacts remaining`;
+      } catch (e) {
+        console.error('Stats error:', e);
+      }
+    }
+
+    // Load New 20 Contacts Batch
+    async function loadNewBatch() {
+      const container = document.getElementById('cardsContainer');
+      const loader = document.getElementById('loadingIndicator');
+      const emptyNotice = document.getElementById('emptyQueue');
+
+      loader.classList.remove('hidden');
+      emptyNotice.classList.add('hidden');
+      container.innerHTML = '';
+      completedInBatch = 0;
+      updateBatchCounter();
+
+      try {
+        const res = await fetch('/api/batch');
+        const data = await res.json();
+        loader.classList.add('hidden');
+
+        if (!data.contacts || data.contacts.length === 0) {
+          emptyNotice.classList.remove('hidden');
+          return;
+        }
+
+        activeBatch = data.contacts;
+        renderCards(activeBatch);
+        fetchStats();
+      } catch (err) {
+        loader.classList.add('hidden');
+        container.innerHTML = `<div class="bg-red-50 text-red-700 p-4 rounded-xl text-xs">Error loading batch: ${err.message}</div>`;
+      }
+    }
+
+    // Render Contact Cards
+    function renderCards(contacts) {
+      const container = document.getElementById('cardsContainer');
+      container.innerHTML = '';
+
+      contacts.forEach((c, idx) => {
+        const isTier1 = (c.tier || '').includes('Tier 1');
+        const isPremium = (c.offer || '').toLowerCase() === 'premium';
+        const rawPhone = c.phone.startsWith('0') ? c.phone : ('0' + c.phone);
+
+        const card = document.createElement('div');
+        card.id = `card-${c.id}`;
+        card.className = "bg-white rounded-2xl p-4 shadow-sm border border-slate-200 hover:shadow-md transition";
+
+        card.innerHTML = `
+          <!-- Header: Name & Plan Badge -->
+          <div class="flex items-start justify-between mb-2">
+            <div>
+              <div class="flex items-center space-x-1.5 mb-0.5">
+                <span class="text-xs font-semibold px-2 py-0.5 rounded-full ${isTier1 ? 'bg-emerald-100 text-emerald-800' : 'bg-blue-100 text-blue-800'}">
+                  ${isTier1 ? '★ Tier 1 High Priority' : c.tier}
+                </span>
+                <span class="text-xs px-2 py-0.5 rounded-full ${isPremium ? 'bg-purple-100 text-purple-800 font-bold' : 'bg-slate-100 text-slate-700'}">
+                  ${c.offer}
+                </span>
+              </div>
+              <h3 class="text-base font-bold text-slate-900 leading-snug">${c.name}</h3>
+              <p class="text-xs text-slate-400">ID: ${c.sub_id} • ${c.city || 'Rwanda'}</p>
+            </div>
+            <span class="text-xs font-mono bg-slate-100 text-slate-600 px-2 py-1 rounded-md">#${idx + 1}</span>
+          </div>
+
+          <!-- Customer Loyalty Info Chips -->
+          <div class="flex flex-wrap gap-1.5 my-2.5 text-xs text-slate-600">
+            <span class="bg-slate-50 border border-slate-200 px-2 py-1 rounded-lg">
+              <i class="fa-solid fa-arrows-rotate text-blue-600 mr-1"></i>${c.renewal_count} Renewals
+            </span>
+            <span class="bg-slate-50 border border-slate-200 px-2 py-1 rounded-lg">
+              <i class="fa-regular fa-calendar-xmark text-amber-600 mr-1"></i>${c.days_lapsed}d overdue
+            </span>
+            <span class="bg-slate-50 border border-slate-200 px-2 py-1 rounded-lg font-semibold text-emerald-700">
+              <i class="fa-solid fa-chart-line mr-1"></i>${Math.round((c.reconnection_score || 0) * 100)}% Win-Back
+            </span>
+          </div>
+
+          <!-- Phone Number & Action Buttons -->
+          <div class="bg-slate-50 rounded-xl p-2.5 border border-slate-200 my-3 flex items-center justify-between">
+            <div>
+              <div class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Subscriber Number</div>
+              <div class="text-lg font-extrabold text-blue-950 font-mono tracking-tight">${c.display_phone}</div>
+            </div>
+            <div class="flex items-center space-x-1.5">
+              <!-- 📋 Copy Number -->
+              <button onclick="copyNumber('${rawPhone}', '${c.display_phone}')" class="bg-white hover:bg-slate-100 text-slate-700 active:scale-90 border border-slate-300 font-semibold text-xs px-2.5 py-2 rounded-lg shadow-sm flex items-center space-x-1 transition" title="Copy Number">
+                <i class="fa-regular fa-copy text-sm text-blue-700"></i>
+                <span class="hidden sm:inline">Copy</span>
+              </button>
+
+              <!-- 📞 Call Link -->
+              <a href="tel:${c.formatted_phone}" class="bg-emerald-600 hover:bg-emerald-500 active:scale-90 text-white font-semibold text-xs px-3 py-2 rounded-lg shadow-sm flex items-center space-x-1 transition" title="Dial directly">
+                <i class="fa-solid fa-phone text-xs"></i>
+                <span>Call</span>
+              </a>
+
+              <!-- 💬 WhatsApp Link -->
+              <a href="https://wa.me/${c.formatted_phone.replace('+', '')}" target="_blank" class="bg-green-600 hover:bg-green-500 active:scale-90 text-white text-xs px-2.5 py-2 rounded-lg shadow-sm flex items-center transition" title="Open WhatsApp">
+                <i class="fa-brands fa-whatsapp text-sm"></i>
+              </a>
+            </div>
+          </div>
+
+          <!-- 1-Touch Outcome Buttons -->
+          <div class="mt-2.5">
+            <div class="text-[11px] font-semibold text-slate-400 mb-1.5">Log Call Result:</div>
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-1.5 text-xs">
+              <button onclick="logOutcome(${c.id}, 'Interested – Will Pay')" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 font-medium py-2 px-2 rounded-lg text-left truncate transition flex items-center space-x-1.5">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
+                <span class="truncate">Interested (MoMo)</span>
+              </button>
+
+              <button onclick="logOutcome(${c.id}, 'No Answer / Switched Off')" class="bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 font-medium py-2 px-2 rounded-lg text-left truncate transition flex items-center space-x-1.5">
+                <span class="w-2 h-2 rounded-full bg-amber-500 shrink-0"></span>
+                <span class="truncate">No Answer</span>
+              </button>
+
+              <button onclick="logOutcome(${c.id}, 'Callback Requested')" class="bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-300 font-medium py-2 px-2 rounded-lg text-left truncate transition flex items-center space-x-1.5">
+                <span class="w-2 h-2 rounded-full bg-blue-500 shrink-0"></span>
+                <span class="truncate">Callback</span>
+              </button>
+
+              <button onclick="logOutcome(${c.id}, 'Refused / Not Interested')" class="bg-red-50 hover:bg-red-100 text-red-800 border border-red-300 font-medium py-2 px-2 rounded-lg text-left truncate transition flex items-center space-x-1.5">
+                <span class="w-2 h-2 rounded-full bg-red-500 shrink-0"></span>
+                <span class="truncate">Refused</span>
+              </button>
+
+              <button onclick="logOutcome(${c.id}, 'Wrong Number')" class="bg-purple-50 hover:bg-purple-100 text-purple-800 border border-purple-300 font-medium py-2 px-2 rounded-lg text-left truncate transition flex items-center space-x-1.5">
+                <span class="w-2 h-2 rounded-full bg-purple-500 shrink-0"></span>
+                <span class="truncate">Wrong Number</span>
+              </button>
+
+              <button onclick="logOutcome(${c.id}, 'Already Renewed')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 font-medium py-2 px-2 rounded-lg text-left truncate transition flex items-center space-x-1.5">
+                <span class="w-2 h-2 rounded-full bg-slate-400 shrink-0"></span>
+                <span class="truncate">Already Paid</span>
+              </button>
+            </div>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    // Log Outcome & Animate Card Out
+    async function logOutcome(id, outcome) {
+      const card = document.getElementById(`card-${id}`);
+      if (!card) return;
+
+      // Animate card removal
+      card.classList.add('card-fade-out');
+      showToast(`Logged: ${outcome}`);
+
+      setTimeout(() => {
+        card.remove();
+        completedInBatch++;
+        updateBatchCounter();
+
+        // Check if all cards in current batch are done
+        const remaining = document.querySelectorAll('#cardsContainer > div');
+        if (remaining.length === 0) {
+          document.getElementById('emptyQueue').classList.remove('hidden');
+        }
+      }, 350);
+
+      try {
+        await fetch('/api/outcome', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id, outcome })
+        });
+        fetchStats();
+      } catch (err) {
+        console.error('Error logging outcome:', err);
+      }
+    }
+
+    // Update Progress Counter
+    function updateBatchCounter() {
+      const total = activeBatch.length || 20;
+      document.getElementById('batchProgress').textContent = `${completedInBatch} / ${total}`;
+    }
+
+    // Load History View
+    async function loadHistory() {
+      const list = document.getElementById('historyList');
+      list.innerHTML = '<div class="text-center py-6 text-slate-400 text-xs"><i class="fa-solid fa-spinner fa-spin mr-1"></i> Loading history...</div>';
+
+      try {
+        const res = await fetch('/api/history');
+        const data = await res.json();
+        const history = data.history || [];
+
+        if (history.length === 0) {
+          list.innerHTML = '<div class="bg-white p-6 rounded-xl text-center text-slate-400 text-xs">No calls logged yet. Start calling from the queue!</div>';
+          return;
+        }
+
+        list.innerHTML = history.map(h => `
+          <div class="bg-white rounded-xl p-3 shadow-sm border border-slate-200 flex items-center justify-between text-xs">
+            <div>
+              <div class="font-bold text-slate-800">${h.name}</div>
+              <div class="text-slate-400 font-mono">${h.display_phone} • ${h.offer}</div>
+              <div class="text-[10px] text-slate-400">${new Date(h.called_at + 'Z').toLocaleString()}</div>
+            </div>
+            <span class="px-2 py-1 rounded-md text-[11px] font-semibold ${
+              h.outcome.includes('Interested') ? 'bg-emerald-100 text-emerald-800' :
+              h.outcome.includes('No Answer') ? 'bg-amber-100 text-amber-800' :
+              h.outcome.includes('Refused') ? 'bg-red-100 text-red-800' : 'bg-slate-100 text-slate-700'
+            }">
+              ${h.outcome}
+            </span>
+          </div>
+        `).join('');
+      } catch (e) {
+        list.innerHTML = `<div class="text-red-500 text-xs">Error: ${e.message}</div>`;
+      }
+    }
+
+    // Initialize on page load
+    window.addEventListener('DOMContentLoaded', () => {
+      fetchStats();
+      loadNewBatch();
+    });
+  </script>
+</body>
+</html>
+
