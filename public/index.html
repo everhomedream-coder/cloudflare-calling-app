@@ -620,7 +620,15 @@
         const isHot = c.reconnection_score >= 0.95 && c.days_lapsed <= 45;
         const isPremium = (c.offer || '').toLowerCase() === 'premium';
         const rawPhone = c.phone.startsWith('0') ? c.phone : ('0' + c.phone);
-        const waMsg = encodeURIComponent(`Muraho *${c.name}*, turakumenyesha ko konti yanyu ya Canal+ irahumanya. Twifuza kukugarura muri serivisi. Hello ${c.name}, your Canal+ subscription has expired. We would love to reconnect you. When can we talk?`);
+        const agentName = (currentUser && (currentUser.name || currentUser.username)) || 'Telesales';
+        const waText = 
+          `Muraho *${c.name}*,\n` +
+          `Twagerageje kubahamagara mu kanya gashize mu rwego rwo kumenya uko interineti yanyu ya *Canalbox* (Konti ID: *${c.sub_id}*) ihagaze.\n` +
+          `Ese mwaba mwaragize ikibazo cya tekiniki kuri modem (box WiFi), cyangwa kongeresha ifatabuguzi.\n` +
+          `Mwatwandikira hano kuri WhatsApp igihe cyose cyangwa mukatubwira igihe cyiza cyo kongera kubahamagara.\n` +
+          `Murakoze,\n` +
+          `*Agent ${agentName} — Canalbox Rwanda*`;
+        const waMsg = encodeURIComponent(waText);
 
         const card = document.createElement('div');
         card.id = `card-${c.id}`;
@@ -839,7 +847,15 @@
       }
       list.innerHTML = currentCallbacks.map(c => {
         const callTime = c.callback_at ? new Date(c.callback_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : 'ASAP';
-        const waMsg = encodeURIComponent(`Muraho *${c.name}*, turakumenyesha ko konti yanyu ya Canal+. Hello ${c.name}, I am calling back as scheduled about your Canal+ subscription.`);
+        const agentName = (currentUser && (currentUser.name || currentUser.username)) || 'Telesales';
+        const waText = 
+          `Muraho *${c.name}*,\n` +
+          `Twagerageje kubahamagara mu kanya gashize mu rwego rwo kumenya uko interineti yanyu ya *Canalbox* (Konti ID: *${c.sub_id}*) ihagaze.\n` +
+          `Ese mwaba mwaragize ikibazo cya tekiniki kuri modem (box WiFi), cyangwa kongeresha ifatabuguzi.\n` +
+          `Mwatwandikira hano kuri WhatsApp igihe cyose cyangwa mukatubwira igihe cyiza cyo kongera kubahamagara.\n` +
+          `Murakoze,\n` +
+          `*Agent ${agentName} — Canalbox Rwanda*`;
+        const waMsg = encodeURIComponent(waText);
         return `
           <div class="bg-white rounded-2xl p-4 shadow-sm border-2 border-blue-200">
             <div class="flex items-center justify-between mb-2">
