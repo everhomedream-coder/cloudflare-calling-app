@@ -1386,8 +1386,9 @@
               <td class="py-3 px-4 font-bold text-slate-800">${escapeHtml(u.name)}</td>
               <td class="py-3 px-4 font-mono text-slate-500">${escapeHtml(u.username)}</td>
               <td class="py-3 px-4 text-center">
-                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${u.shift_status === 'online' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-600'}">
-                  ${u.shift_status === 'online' ? '🟢 Online' : '⚫ Offline'}
+                <span class="inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold ${u.shift_status === 'online' ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-slate-100 text-slate-500 border border-slate-200'}">
+                  <span class="w-2 h-2 rounded-full ${u.shift_status === 'online' ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'}"></span>
+                  <span>${u.shift_status === 'online' ? 'Working Now' : 'Offline'}</span>
                 </span>
               </td>
               <td class="py-3 px-4 text-center">
@@ -1411,8 +1412,9 @@
               <td class="py-3 px-3 font-mono font-bold text-slate-800">${escapeHtml(u.username)}</td>
               <td class="py-3 px-3 text-slate-700 font-medium">${escapeHtml(u.name)}</td>
               <td class="py-3 px-3 text-center">
-                <button onclick="toggleAgentShiftAdmin('${u.username}', '${u.shift_status === 'online' ? 'offline' : 'online'}')" class="px-2 py-0.5 rounded-full text-[10px] font-bold ${u.shift_status === 'online' ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200' : 'bg-slate-200 text-slate-600 hover:bg-slate-300'} transition" title="Click to toggle shift">
-                  ${u.shift_status === 'online' ? '🟢 Online' : '⚫ Offline'}
+                <button onclick="toggleAgentShiftAdmin('${u.username}', '${u.shift_status === 'online' ? 'offline' : 'online'}')" class="inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold ${u.shift_status === 'online' ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200 border border-emerald-300' : 'bg-slate-100 text-slate-500 hover:bg-slate-200 border border-slate-200'} transition" title="Click to override status">
+                  <span class="w-2 h-2 rounded-full ${u.shift_status === 'online' ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'}"></span>
+                  <span>${u.shift_status === 'online' ? 'Working Now' : 'Offline'}</span>
                 </button>
               </td>
               <td class="py-3 px-3 text-center font-bold text-slate-700">${u.daily_target || 30}</td>
@@ -1629,10 +1631,16 @@
         .replace(/'/g, '&#39;');
     }
 
-    // Initial Load
+    // Initial Load & Live Presence Polling
     document.addEventListener('DOMContentLoaded', () => {
       loadAdminStats();
       loadAssign20Preview();
+
+      // Automatically refresh live working agents and metrics every 20 seconds
+      setInterval(() => {
+        loadAssign20Preview();
+        if (currentView === 'team') loadUsersTable();
+      }, 20000);
     });
 
     // ===== PWA INSTALL LOGIC =====

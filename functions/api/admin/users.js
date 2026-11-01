@@ -69,8 +69,24 @@ export async function onRequestGet(context) {
 export async function onRequestPost(context) {
   try {
     const db = context.env.DB;
-    const body = await context.request.json();
-    const { username, name, pin, role, daily_target, shift_status } = body;
+    let body;
+    try {
+      const text = await context.request.text();
+      body = JSON.parse(text);
+    } catch (e) {
+      body = {};
+    }
+
+    const { username, name, pin, role, daily_target, shift_status, action } = body;
+
+    // Support presence / beacon heartbeat (e.g. from navigator.sendBeacon on tab close)
+    if ((action === "presence" || shift_status !== undefined) && username && !pin) {
+      const cleanShift = shift_status === "online" ? "online" : "offline";
+      await db.prepare("UPDATE users SET shift_status = ? WHERE LOWER(username) = ?")
+        .bind(cleanShift, username.trim().toLowerCase())
+        .run();
+      return Response.json({ success: true, shift_status: cleanShift });
+    }
 
     if (!username || !pin || !name) {
       return Response.json({ error: "Username, Name, and Password/PIN are required" }, { status: 400 });

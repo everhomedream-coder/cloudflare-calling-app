@@ -426,15 +426,77 @@
       }
     }
 
+    // ===== AUTOMATIC ONLINE PRESENCE & HEARTBEAT =====
+    let heartbeatTimer = null;
+    let awayGraceTimer = null;
+
+    function reportPresence(status) {
+      if (!currentUser || currentUser.role === 'admin') return;
+      shiftStatus = status;
+      updateShiftUI();
+      try {
+        const payload = JSON.stringify({ username: currentUser.username, shift_status: status });
+        if (status === 'offline' && navigator.sendBeacon) {
+          navigator.sendBeacon('/api/admin/users', new Blob([payload], { type: 'application/json' }));
+        } else {
+          fetch('/api/admin/users', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: payload
+          }).catch(() => {});
+        }
+      } catch (e) {}
+    }
+
+    function initPresenceTracking() {
+      // 1. Mark Online immediately when entering workspace
+      reportPresence('online');
+
+      // 2. Continuous heartbeat every 45s while using app
+      if (heartbeatTimer) clearInterval(heartbeatTimer);
+      heartbeatTimer = setInterval(() => {
+        if (document.visibilityState === 'visible' && currentUser) {
+          reportPresence('online');
+        }
+      }, 45000);
+
+      // 3. Page Close / App Exit -> Mark Offline immediately
+      window.addEventListener('beforeunload', () => {
+        reportPresence('offline');
+      });
+      window.addEventListener('pagehide', () => {
+        reportPresence('offline');
+      });
+
+      // 4. Tab Visibility (minimizing app or locking screen)
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden') {
+          // If away for more than 90 seconds, mark as offline
+          if (awayGraceTimer) clearTimeout(awayGraceTimer);
+          awayGraceTimer = setTimeout(() => {
+            reportPresence('offline');
+          }, 90000);
+        } else {
+          // Came back to the tab -> immediately Online!
+          if (awayGraceTimer) {
+            clearTimeout(awayGraceTimer);
+            awayGraceTimer = null;
+          }
+          if (currentUser) {
+            reportPresence('online');
+          }
+        }
+      });
+    }
+
+    function stopPresenceTracking() {
+      if (heartbeatTimer) { clearInterval(heartbeatTimer); heartbeatTimer = null; }
+      if (awayGraceTimer) { clearTimeout(awayGraceTimer); awayGraceTimer = null; }
+      reportPresence('offline');
+    }
+
     function handleSignOut() {
-      // Go offline when signing out
-      if (currentUser) {
-        fetch('/api/admin/users', {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username: currentUser.username, shift_status: 'offline' })
-        }).catch(() => {});
-      }
+      stopPresenceTracking();
       sessionStorage.removeItem('canal_user');
       currentUser = null;
       document.getElementById('callingApp').classList.add('hidden');
@@ -446,34 +508,28 @@
       document.getElementById('authScreen').classList.add('hidden');
       document.getElementById('callingApp').classList.remove('hidden');
       document.getElementById('agentGreeting').textContent = `${currentUser.name}`;
+      initPresenceTracking();
       loadAssignedLeads();
     }
 
-    // ===== SHIFT TOGGLE =====
+    // ===== SHIFT TOGGLE (MANUAL OVERRIDE / BREAK) =====
     async function toggleShift() {
       const newStatus = shiftStatus === 'online' ? 'offline' : 'online';
-      try {
-        await fetch('/api/admin/users', {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username: currentUser.username, shift_status: newStatus })
-        });
-        shiftStatus = newStatus;
-        updateShiftUI();
-        showToast(newStatus === 'online' ? '🟢 Shift started — you are now Online!' : '🔴 Shift ended — marked Offline');
-      } catch (err) {
-        showToast('Could not update shift status');
-      }
+      reportPresence(newStatus);
+      showToast(newStatus === 'online' ? '🟢 Working — marked Online' : '🔴 On Break — marked Offline');
     }
 
     function updateShiftUI() {
       const btn = document.getElementById('shiftBtn');
       const label = document.getElementById('shiftLabel');
+      const dot = document.getElementById('shiftDot');
       if (shiftStatus === 'online') {
-        btn.className = 'shift-online text-white text-[10px] font-extrabold uppercase px-2.5 py-1.5 rounded-lg transition active:scale-95 flex items-center space-x-1';
-        label.textContent = 'Online';
+        btn.className = 'shift-online text-white text-[10px] font-extrabold uppercase px-2.5 py-1.5 rounded-lg transition active:scale-95 flex items-center space-x-1.5 shadow-sm';
+        dot.className = 'w-2 h-2 rounded-full bg-white animate-pulse';
+        label.textContent = 'Working (Online)';
       } else {
-        btn.className = 'shift-offline text-white text-[10px] font-extrabold uppercase px-2.5 py-1.5 rounded-lg transition active:scale-95 flex items-center space-x-1';
+        btn.className = 'shift-offline text-white text-[10px] font-extrabold uppercase px-2.5 py-1.5 rounded-lg transition active:scale-95 flex items-center space-x-1.5';
+        dot.className = 'w-2 h-2 rounded-full bg-slate-300';
         label.textContent = 'Offline';
       }
     }
